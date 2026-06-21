@@ -37,7 +37,7 @@
 使用一键部署脚本：
 
 ```bash
-git clone <your-repo-url>
+git clone <github.com/5418814520666/server-monitor/blob/main/deploy.sh>
 cd server-monitor
 chmod +x deploy.sh
 ./deploy.sh
@@ -54,7 +54,7 @@ chmod +x deploy.sh
 
 1. **克隆项目**
 ```bash
-git clone <your-repo-url>
+git clone <github.com/5418814520666/server-monitor/blob/main/deploy.sh>
 cd server-monitor
 ```
 
