@@ -53,7 +53,9 @@ const defaultConfig = {
   alwaysOnTop: false,
   enableNotifications: true,
   globalShortcut: 'Ctrl+Shift+M',
-  enableGlobalShortcut: true
+  enableGlobalShortcut: true,
+  theme: 'dark', // dark, light, auto
+  language: 'zh-CN' // zh-CN, en-US
 };
 
 // 合并配置
