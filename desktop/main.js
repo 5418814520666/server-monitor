@@ -4,6 +4,15 @@ const { autoUpdater } = require('electron-updater');
 const fs = require('fs');
 const crypto = require('crypto');
 
+// 尝试加载 ssh2 库（如果已安装）
+let Client = null;
+try {
+  Client = require('ssh2').Client;
+  console.log('ssh2 库加载成功');
+} catch (e) {
+  console.log('ssh2 库未安装，SSH功能将使用模拟模式:', e.message);
+}
+
 // 开发模式判断
 const isDev = process.argv.includes('--dev') || process.env.NODE_ENV === 'development';
 
@@ -2242,16 +2251,28 @@ async function batchExecuteCommand(serverIds, command) {
     }
     
     try {
-      // 注意：实际实现需要 ssh2 库
-      // 这里先返回模拟结果
-      results.push({
-        serverId,
-        serverName: server.name,
-        success: true,
-        output: `[模拟执行] ${command}\n输出：命令执行成功`,
-        error: null,
-        timestamp: new Date().toISOString()
-      });
+      // 如果 ssh2 库可用，使用真实的 SSH 执行
+      if (Client) {
+        const output = await executeSSHCommand(server, command);
+        results.push({
+          serverId,
+          serverName: server.name,
+          success: true,
+          output,
+          error: null,
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        // 模拟模式
+        results.push({
+          serverId,
+          serverName: server.name,
+          success: true,
+          output: `[模拟执行] ${command}\n输出：命令执行成功\n（提示：安装 ssh2 库后可使用真实 SSH 执行）`,
+          error: null,
+          timestamp: new Date().toISOString()
+        });
+      }
     } catch (e) {
       results.push({
         serverId,
@@ -2268,6 +2289,59 @@ async function batchExecuteCommand(serverIds, command) {
   batchCommandResults = [...results, ...batchCommandResults].slice(0, 100);
   
   return results;
+}
+
+// 执行 SSH 命令（真实实现）
+function executeSSHCommand(server, command) {
+  return new Promise((resolve, reject) => {
+    const conn = new Client();
+    
+    const connectConfig = {
+      host: server.sshHost || server.url.replace(/^https?:\/\//, '').replace(/\/.*$/, ''),
+      port: server.sshPort || 22,
+      username: server.sshUsername || server.username || 'root'
+    };
+    
+    // 如果有密码，使用密码认证
+    if (server.sshPassword) {
+      connectConfig.password = server.sshPassword;
+    }
+    
+    // 如果有私钥路径，使用私钥认证
+    if (server.sshKey && fs.existsSync(server.sshKey)) {
+      connectConfig.privateKey = fs.readFileSync(server.sshKey);
+    }
+    
+    conn.on('ready', () => {
+      console.log(`SSH连接成功: ${server.name}`);
+      
+      conn.exec(command, (err, stream) => {
+        if (err) {
+          conn.end();
+          reject(err);
+          return;
+        }
+        
+        let output = '';
+        let stderr = '';
+        
+        stream.on('close', (code) => {
+          conn.end();
+          if (code === 0) {
+            resolve(output);
+          } else {
+            reject(new Error(`命令执行失败，退出码: ${code}\n${stderr || output}`));
+          }
+        }).on('data', (data) => {
+          output += data.toString();
+        }).stderr.on('data', (data) => {
+          stderr += data.toString();
+        });
+      });
+    }).on('error', (err) => {
+      reject(new Error(`SSH连接失败: ${err.message}`));
+    }).connect(connectConfig);
+  });
 }
 
 // 获取批量执行历史
@@ -2304,26 +2378,73 @@ async function getSftpConnection(serverId) {
     throw new Error('服务器不存在或SSH未启用');
   }
   
-  try {
-    // 注意：实际实现需要 ssh2 库
-    // 这里先返回模拟的连接对象
+  // 如果 ssh2 库不可用，返回模拟连接
+  if (!Client) {
     const mockSftp = {
       serverId,
       serverName: server.name,
       connected: true,
-      currentPath: '/home/' + (server.sshUsername || 'user')
+      currentPath: '/home/' + (server.sshUsername || 'user'),
+      isMock: true
     };
-    
     sftpConnections[serverId] = mockSftp;
     return mockSftp;
-  } catch (e) {
-    throw new Error('SFTP连接失败: ' + e.message);
   }
+  
+  // 真实的 SSH + SFTP 连接
+  return new Promise((resolve, reject) => {
+    const conn = new Client();
+    
+    const connectConfig = {
+      host: server.sshHost || server.url.replace(/^https?:\/\//, '').replace(/\/.*$/, ''),
+      port: server.sshPort || 22,
+      username: server.sshUsername || server.username || 'root'
+    };
+    
+    if (server.sshPassword) {
+      connectConfig.password = server.sshPassword;
+    }
+    
+    if (server.sshKey && fs.existsSync(server.sshKey)) {
+      connectConfig.privateKey = fs.readFileSync(server.sshKey);
+    }
+    
+    conn.on('ready', () => {
+      console.log(`SSH连接成功: ${server.name}`);
+      
+      conn.sftp((err, sftp) => {
+        if (err) {
+          conn.end();
+          reject(new Error('SFTP初始化失败: ' + err.message));
+          return;
+        }
+        
+        const sftpObj = {
+          serverId,
+          serverName: server.name,
+          connected: true,
+          conn,
+          sftp,
+          currentPath: '/home/' + (server.sshUsername || 'user'),
+          isMock: false
+        };
+        
+        sftpConnections[serverId] = sftpObj;
+        resolve(sftpObj);
+      });
+    }).on('error', (err) => {
+      reject(new Error('SSH连接失败: ' + err.message));
+    }).connect(connectConfig);
+  });
 }
 
 // 关闭 SFTP 连接
 function closeSftpConnection(serverId) {
   if (sftpConnections[serverId]) {
+    const sftpObj = sftpConnections[serverId];
+    if (sftpObj.conn) {
+      sftpObj.conn.end();
+    }
     delete sftpConnections[serverId];
     return true;
   }
@@ -2332,74 +2453,208 @@ function closeSftpConnection(serverId) {
 
 // 列出目录内容
 async function listSftpDirectory(serverId, path) {
-  const sftp = await getSftpConnection(serverId);
+  const sftpObj = await getSftpConnection(serverId);
   
-  // 模拟返回目录列表
-  const mockFiles = [
-    { name: '.', type: 'directory', size: 4096, modified: Date.now() },
-    { name: '..', type: 'directory', size: 4096, modified: Date.now() - 86400000 },
-    { name: 'Documents', type: 'directory', size: 4096, modified: Date.now() - 3600000 },
-    { name: 'Downloads', type: 'directory', size: 4096, modified: Date.now() - 7200000 },
-    { name: 'Desktop', type: 'directory', size: 4096, modified: Date.now() - 1800000 },
-    { name: 'readme.txt', type: 'file', size: 1024, modified: Date.now() - 86400000 },
-    { name: 'config.json', type: 'file', size: 512, modified: Date.now() - 3600000 },
-    { name: 'server.log', type: 'file', size: 10240, modified: Date.now() - 600000 }
-  ];
+  // 模拟模式
+  if (sftpObj.isMock) {
+    const mockFiles = [
+      { name: '.', type: 'directory', size: 4096, modified: Date.now() },
+      { name: '..', type: 'directory', size: 4096, modified: Date.now() - 86400000 },
+      { name: 'Documents', type: 'directory', size: 4096, modified: Date.now() - 3600000 },
+      { name: 'Downloads', type: 'directory', size: 4096, modified: Date.now() - 7200000 },
+      { name: 'Desktop', type: 'directory', size: 4096, modified: Date.now() - 1800000 },
+      { name: 'readme.txt', type: 'file', size: 1024, modified: Date.now() - 86400000 },
+      { name: 'config.json', type: 'file', size: 512, modified: Date.now() - 3600000 },
+      { name: 'server.log', type: 'file', size: 10240, modified: Date.now() - 600000 }
+    ];
+    
+    return {
+      path: path || sftpObj.currentPath,
+      files: mockFiles
+    };
+  }
   
-  return {
-    path: path || sftp.currentPath,
-    files: mockFiles
-  };
+  // 真实 SFTP
+  return new Promise((resolve, reject) => {
+    const targetPath = path || sftpObj.currentPath;
+    
+    sftpObj.sftp.readdir(targetPath, (err, list) => {
+      if (err) {
+        reject(new Error('读取目录失败: ' + err.message));
+        return;
+      }
+      
+      const files = list.map(item => ({
+        name: item.filename,
+        type: item.longname.startsWith('d') ? 'directory' : 'file',
+        size: item.attrs.size,
+        modified: item.attrs.mtime * 1000
+      }));
+      
+      // 添加 . 和 ..
+      files.unshift(
+        { name: '..', type: 'directory', size: 4096, modified: Date.now() - 86400000 }
+      );
+      files.unshift(
+        { name: '.', type: 'directory', size: 4096, modified: Date.now() }
+      );
+      
+      sftpObj.currentPath = targetPath;
+      resolve({ path: targetPath, files });
+    });
+  });
 }
 
 // 上传文件
 async function uploadSftpFile(serverId, localPath, remotePath) {
-  const sftp = await getSftpConnection(serverId);
+  const sftpObj = await getSftpConnection(serverId);
   
-  // 模拟上传
-  return {
-    success: true,
-    localPath,
-    remotePath,
-    size: fs.existsSync(localPath) ? fs.statSync(localPath).size : 0
-  };
+  // 模拟模式
+  if (sftpObj.isMock) {
+    return {
+      success: true,
+      localPath,
+      remotePath,
+      size: fs.existsSync(localPath) ? fs.statSync(localPath).size : 0
+    };
+  }
+  
+  // 真实 SFTP 上传
+  return new Promise((resolve, reject) => {
+    const readStream = fs.createReadStream(localPath);
+    const writeStream = sftpObj.sftp.createWriteStream(remotePath);
+    
+    writeStream.on('close', () => {
+      resolve({
+        success: true,
+        localPath,
+        remotePath,
+        size: fs.statSync(localPath).size
+      });
+    });
+    
+    writeStream.on('error', (err) => {
+      reject(new Error('上传失败: ' + err.message));
+    });
+    
+    readStream.on('error', (err) => {
+      reject(new Error('读取本地文件失败: ' + err.message));
+    });
+    
+    readStream.pipe(writeStream);
+  });
 }
 
 // 下载文件
 async function downloadSftpFile(serverId, remotePath, localPath) {
-  const sftp = await getSftpConnection(serverId);
+  const sftpObj = await getSftpConnection(serverId);
   
-  // 模拟下载
-  return {
-    success: true,
-    remotePath,
-    localPath,
-    size: 1024
-  };
+  // 模拟模式
+  if (sftpObj.isMock) {
+    // 创建一个模拟文件
+    fs.writeFileSync(localPath, '这是一个模拟的下载文件内容\n');
+    return {
+      success: true,
+      remotePath,
+      localPath,
+      size: fs.statSync(localPath).size
+    };
+  }
+  
+  // 真实 SFTP 下载
+  return new Promise((resolve, reject) => {
+    const readStream = sftpObj.sftp.createReadStream(remotePath);
+    const writeStream = fs.createWriteStream(localPath);
+    
+    writeStream.on('close', () => {
+      resolve({
+        success: true,
+        remotePath,
+        localPath,
+        size: fs.statSync(localPath).size
+      });
+    });
+    
+    writeStream.on('error', (err) => {
+      reject(new Error('写入本地文件失败: ' + err.message));
+    });
+    
+    readStream.on('error', (err) => {
+      reject(new Error('下载失败: ' + err.message));
+    });
+    
+    readStream.pipe(writeStream);
+  });
 }
 
 // 删除文件
 async function deleteSftpFile(serverId, remotePath) {
-  const sftp = await getSftpConnection(serverId);
+  const sftpObj = await getSftpConnection(serverId);
   
-  // 模拟删除
-  return { success: true, path: remotePath };
+  // 模拟模式
+  if (sftpObj.isMock) {
+    return { success: true, path: remotePath };
+  }
+  
+  // 真实 SFTP 删除
+  return new Promise((resolve, reject) => {
+    sftpObj.sftp.unlink(remotePath, (err) => {
+      if (err) {
+        // 尝试删除目录
+        sftpObj.sftp.rmdir(remotePath, (err2) => {
+          if (err2) {
+            reject(new Error('删除失败: ' + err.message));
+          } else {
+            resolve({ success: true, path: remotePath });
+          }
+        });
+      } else {
+        resolve({ success: true, path: remotePath });
+      }
+    });
+  });
 }
 
 // 创建目录
 async function createSftpDirectory(serverId, remotePath) {
-  const sftp = await getSftpConnection(serverId);
+  const sftpObj = await getSftpConnection(serverId);
   
-  // 模拟创建
-  return { success: true, path: remotePath };
+  // 模拟模式
+  if (sftpObj.isMock) {
+    return { success: true, path: remotePath };
+  }
+  
+  // 真实 SFTP 创建目录
+  return new Promise((resolve, reject) => {
+    sftpObj.sftp.mkdir(remotePath, (err) => {
+      if (err) {
+        reject(new Error('创建目录失败: ' + err.message));
+      } else {
+        resolve({ success: true, path: remotePath });
+      }
+    });
+  });
 }
 
 // 重命名文件
 async function renameSftpFile(serverId, oldPath, newPath) {
-  const sftp = await getSftpConnection(serverId);
+  const sftpObj = await getSftpConnection(serverId);
   
-  // 模拟重命名
-  return { success: true, oldPath, newPath };
+  // 模拟模式
+  if (sftpObj.isMock) {
+    return { success: true, oldPath, newPath };
+  }
+  
+  // 真实 SFTP 重命名
+  return new Promise((resolve, reject) => {
+    sftpObj.sftp.rename(oldPath, newPath, (err) => {
+      if (err) {
+        reject(new Error('重命名失败: ' + err.message));
+      } else {
+        resolve({ success: true, oldPath, newPath });
+      }
+    });
+  });
 }
 
 // SFTP IPC 接口
