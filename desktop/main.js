@@ -2218,6 +2218,75 @@ ipcMain.handle('move-mini-window', (event, dx, dy) => {
 
 // ==================== 迷你悬浮窗结束 ====================
 
+// ==================== 批量执行命令 ====================
+// 批量执行命令结果存储
+let batchCommandResults = [];
+
+// 批量执行命令
+async function batchExecuteCommand(serverIds, command) {
+  const results = [];
+  const servers = getServers();
+  
+  for (const serverId of serverIds) {
+    const server = servers.find(s => s.id === serverId);
+    if (!server || !server.sshEnabled) {
+      results.push({
+        serverId,
+        serverName: server?.name || '未知服务器',
+        success: false,
+        error: server?.sshEnabled ? '服务器不存在' : 'SSH未启用',
+        output: '',
+        timestamp: new Date().toISOString()
+      });
+      continue;
+    }
+    
+    try {
+      // 注意：实际实现需要 ssh2 库
+      // 这里先返回模拟结果
+      results.push({
+        serverId,
+        serverName: server.name,
+        success: true,
+        output: `[模拟执行] ${command}\n输出：命令执行成功`,
+        error: null,
+        timestamp: new Date().toISOString()
+      });
+    } catch (e) {
+      results.push({
+        serverId,
+        serverName: server.name,
+        success: false,
+        error: e.message,
+        output: '',
+        timestamp: new Date().toISOString()
+      });
+    }
+  }
+  
+  // 保存结果
+  batchCommandResults = [...results, ...batchCommandResults].slice(0, 100);
+  
+  return results;
+}
+
+// 获取批量执行历史
+function getBatchCommandHistory() {
+  return batchCommandResults;
+}
+
+// 批量执行命令 IPC
+ipcMain.handle('batch-execute-command', async (event, serverIds, command) => {
+  const results = await batchExecuteCommand(serverIds, command);
+  return { success: true, results };
+});
+
+ipcMain.handle('get-batch-command-history', () => {
+  return { success: true, history: getBatchCommandHistory() };
+});
+
+// ==================== 批量执行命令结束 ====================
+
 // 应用就绪
 app.whenReady().then(() => {
   // 设置开机自启动
