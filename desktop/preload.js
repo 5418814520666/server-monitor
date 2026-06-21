@@ -90,6 +90,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   clearAllHistory: () => ipcRenderer.invoke('clear-all-history'),
   exportHistory: (serverId, format) => ipcRenderer.invoke('export-history', serverId, format),
   
+  // 导出告警日志
+  exportAlarmLogs: (format) => ipcRenderer.invoke('export-alarm-logs', format),
+  
+  // 导出服务器配置
+  exportServers: (format) => ipcRenderer.invoke('export-servers', format),
+  
   // 截图功能
   takeScreenshot: () => ipcRenderer.invoke('take-screenshot'),
   openScreenshotsFolder: () => ipcRenderer.invoke('open-screenshots-folder'),

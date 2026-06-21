@@ -1883,6 +1883,116 @@ ipcMain.handle('export-history', (event, serverId, format = 'json') => {
   return { success: true, content };
 });
 
+// 导出告警日志
+ipcMain.handle('export-alarm-logs', (event, format = 'json') => {
+  let content;
+  const ext = format === 'csv' ? 'csv' : 'json';
+  
+  if (format === 'csv') {
+    // CSV 格式
+    const headers = ['时间', '服务器', '级别', '消息', '状态', '解决时间'];
+    const rows = alarmLogs.map(log => [
+      log.timestamp,
+      log.serverName,
+      log.level,
+      log.message,
+      log.resolved ? '已解决' : '未解决',
+      log.resolvedAt || ''
+    ]);
+    
+    content = [headers.join(','), ...rows.map(row => 
+      row.map(cell => `"${(cell || '').toString().replace(/"/g, '""')}"`).join(',')
+    )].join('\n');
+  } else {
+    // JSON 格式
+    content = JSON.stringify(alarmLogs, null, 2);
+  }
+  
+  // 保存到文件
+  const defaultPath = path.join(
+    app.getPath('documents'),
+    `alarm-logs-${Date.now()}.${ext}`
+  );
+  
+  dialog.showSaveDialog(mainWindow, {
+    title: '导出告警日志',
+    defaultPath,
+    filters: [
+      { name: format.toUpperCase() + ' 文件', extensions: [ext] },
+      { name: '所有文件', extensions: ['*'] }
+    ]
+  }).then((result) => {
+    if (!result.canceled && result.filePath) {
+      fs.writeFileSync(result.filePath, content, 'utf-8');
+      sendNotification('导出成功', `告警日志已导出到: ${result.filePath}`);
+    }
+  }).catch((err) => {
+    console.error('导出告警日志失败:', err);
+  });
+  
+  return { success: true, content };
+});
+
+// 导出服务器配置
+ipcMain.handle('export-servers', (event, format = 'json') => {
+  let content;
+  const ext = format === 'csv' ? 'csv' : 'json';
+  
+  // 移除敏感信息（密码）用于导出
+  const exportServers = servers.map(s => ({
+    ...s,
+    password: s.password ? '******' : '',
+    sshPassword: s.sshPassword ? '******' : ''
+  }));
+  
+  if (format === 'csv') {
+    // CSV 格式
+    const headers = ['名称', '地址', '分组', '用户名', '状态', 'SSH启用', 'SSH主机', 'SSH端口', 'SSH用户名'];
+    const rows = exportServers.map(s => [
+      s.name,
+      s.url,
+      s.group || '默认分组',
+      s.username || '',
+      s.status || 'unknown',
+      s.sshEnabled ? '是' : '否',
+      s.sshHost || '',
+      s.sshPort || '',
+      s.sshUsername || ''
+    ]);
+    
+    content = [headers.join(','), ...rows.map(row => 
+      row.map(cell => `"${(cell || '').toString().replace(/"/g, '""')}"`).join(',')
+    )].join('\n');
+  } else {
+    // JSON 格式
+    content = JSON.stringify(exportServers, null, 2);
+  }
+  
+  // 保存到文件
+  const defaultPath = path.join(
+    app.getPath('documents'),
+    `servers-config-${Date.now()}.${ext}`
+  );
+  
+  dialog.showSaveDialog(mainWindow, {
+    title: '导出服务器配置',
+    defaultPath,
+    filters: [
+      { name: format.toUpperCase() + ' 文件', extensions: [ext] },
+      { name: '所有文件', extensions: ['*'] }
+    ]
+  }).then((result) => {
+    if (!result.canceled && result.filePath) {
+      fs.writeFileSync(result.filePath, content, 'utf-8');
+      sendNotification('导出成功', `服务器配置已导出到: ${result.filePath}`);
+    }
+  }).catch((err) => {
+    console.error('导出服务器配置失败:', err);
+  });
+  
+  return { success: true, content };
+});
+
 // ==================== 本地历史记录 IPC 结束 ====================
 
 // ==================== 截图功能 ====================

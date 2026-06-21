@@ -1073,6 +1073,9 @@
                     <button class="btn btn-primary" id="addServerBtn">
                         ➕ 添加服务器
                     </button>
+                    <button class="btn btn-secondary" id="exportServersBtn">
+                        📥 导出配置
+                    </button>
                 </div>
                 
                 <div class="card">
@@ -1155,6 +1158,9 @@
                     </div>
                     <button class="btn btn-secondary btn-sm" id="refreshLogsBtn">
                         🔄 刷新
+                    </button>
+                    <button class="btn btn-secondary btn-sm" id="exportLogsBtn">
+                        📥 导出
                     </button>
                 </div>
                 
@@ -2484,6 +2490,13 @@
             // 添加服务器按钮
             document.getElementById('addServerBtn')?.addEventListener('click', openAddServerModal);
             
+            // 导出服务器配置按钮
+            document.getElementById('exportServersBtn')?.addEventListener('click', () => {
+                if (window.electronAPI?.exportServers) {
+                    window.electronAPI.exportServers('json');
+                }
+            });
+            
             // 刷新状态按钮
             document.getElementById('refreshStatusBtn')?.addEventListener('click', refreshServerStatus);
             
@@ -2492,6 +2505,13 @@
             
             // 刷新日志按钮
             document.getElementById('refreshLogsBtn')?.addEventListener('click', loadAlarmLogs);
+            
+            // 导出告警日志按钮
+            document.getElementById('exportLogsBtn')?.addEventListener('click', () => {
+                if (window.electronAPI?.exportAlarmLogs) {
+                    window.electronAPI.exportAlarmLogs('json');
+                }
+            });
             
             // 日志过滤器
             document.getElementById('logFilterLevel')?.addEventListener('change', loadAlarmLogs);
