@@ -9,6 +9,7 @@ const isDev = process.argv.includes('--dev') || process.env.NODE_ENV === 'develo
 // 全局窗口引用
 let mainWindow = null;
 let tray = null;
+let miniWindow = null; // 迷你悬浮窗
 
 // 服务器状态
 let serverStatus = 'unknown'; // unknown, online, warning, offline
@@ -1092,6 +1093,13 @@ function createMenu() {
         },
         { type: 'separator' },
         {
+          label: '迷你悬浮窗',
+          accelerator: 'Ctrl+Shift+N',
+          click: () => {
+            toggleMiniWindow();
+          }
+        },
+        {
           label: '窗口置顶',
           type: 'checkbox',
           checked: appConfig.alwaysOnTop,
@@ -1114,6 +1122,21 @@ function createMenu() {
             if (mainWindow) {
               mainWindow.webContents.toggleDevTools();
             }
+          }
+        },
+        { type: 'separator' },
+        {
+          label: '截图',
+          accelerator: 'Ctrl+Shift+S',
+          click: () => {
+            takeScreenshot();
+          }
+        },
+        {
+          label: '打开截图文件夹',
+          click: () => {
+            ensureScreenshotsDir();
+            shell.openPath(screenshotsDir);
           }
         }
       ]
@@ -1574,6 +1597,173 @@ ipcMain.handle('stop-alarm-check', () => {
 });
 
 // ==================== 告警系统 IPC 结束 ====================
+
+// ==================== 截图功能 ====================
+const screenshotsDir = path.join(app.getPath('pictures'), 'Server Monitor Screenshots');
+
+// 确保截图目录存在
+function ensureScreenshotsDir() {
+  try {
+    if (!fs.existsSync(screenshotsDir)) {
+      fs.mkdirSync(screenshotsDir, { recursive: true });
+    }
+    return true;
+  } catch (e) {
+    console.error('创建截图目录失败:', e);
+    return false;
+  }
+}
+
+// 截取当前窗口
+async function takeScreenshot() {
+  if (!mainWindow) {
+    return { success: false, error: '没有可用的窗口' };
+  }
+  
+  try {
+    ensureScreenshotsDir();
+    
+    // 捕获页面
+    const image = await mainWindow.webContents.capturePage();
+    
+    // 生成文件名
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const fileName = `screenshot-${timestamp}.png`;
+    const filePath = path.join(screenshotsDir, fileName);
+    
+    // 保存图片
+    fs.writeFileSync(filePath, image.toPNG());
+    
+    console.log('截图已保存:', filePath);
+    
+    // 发送通知
+    sendNotification('截图成功', `截图已保存到: ${filePath}`);
+    
+    return { success: true, filePath, fileName };
+  } catch (e) {
+    console.error('截图失败:', e);
+    return { success: false, error: e.message };
+  }
+}
+
+// 截图 IPC
+ipcMain.handle('take-screenshot', async () => {
+  return await takeScreenshot();
+});
+
+ipcMain.handle('open-screenshots-folder', () => {
+  ensureScreenshotsDir();
+  shell.openPath(screenshotsDir);
+  return { success: true, path: screenshotsDir };
+});
+// ==================== 截图功能结束 ====================
+
+// ==================== 迷你悬浮窗 ====================
+
+// 创建迷你悬浮窗
+function createMiniWindow() {
+  if (miniWindow) {
+    miniWindow.show();
+    return miniWindow;
+  }
+  
+  miniWindow = new BrowserWindow({
+    width: 280,
+    height: 180,
+    x: 100,
+    y: 100,
+    frame: false,
+    transparent: true,
+    resizable: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    title: '服务器监控悬浮窗',
+    icon: path.join(__dirname, 'build', 'icon.png'),
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: false
+    }
+  });
+  
+  // 加载悬浮窗页面
+  miniWindow.loadFile(path.join(__dirname, 'renderer', 'mini.html'));
+  
+  // 点击悬浮窗显示主窗口
+  miniWindow.on('click-through', () => {
+    showWindow();
+  });
+  
+  // 关闭时隐藏而不是销毁
+  miniWindow.on('close', (event) => {
+    if (!app.isQuiting) {
+      event.preventDefault();
+      miniWindow.hide();
+    }
+  });
+  
+  miniWindow.on('closed', () => {
+    miniWindow = null;
+  });
+  
+  return miniWindow;
+}
+
+// 显示迷你悬浮窗
+function showMiniWindow() {
+  if (!miniWindow) {
+    createMiniWindow();
+  } else {
+    miniWindow.show();
+  }
+}
+
+// 隐藏迷你悬浮窗
+function hideMiniWindow() {
+  if (miniWindow) {
+    miniWindow.hide();
+  }
+}
+
+// 切换迷你悬浮窗显示
+function toggleMiniWindow() {
+  if (miniWindow && miniWindow.isVisible()) {
+    hideMiniWindow();
+  } else {
+    showMiniWindow();
+  }
+}
+
+// 更新悬浮窗数据
+function updateMiniWindowData(data) {
+  if (miniWindow && !miniWindow.isDestroyed()) {
+    miniWindow.webContents.send('update-data', data);
+  }
+}
+
+// 迷你悬浮窗 IPC
+ipcMain.handle('show-mini-window', () => {
+  showMiniWindow();
+  return { success: true };
+});
+
+ipcMain.handle('hide-mini-window', () => {
+  hideMiniWindow();
+  return { success: true };
+});
+
+ipcMain.handle('toggle-mini-window', () => {
+  toggleMiniWindow();
+  return { success: true, visible: miniWindow?.isVisible() || false };
+});
+
+ipcMain.handle('mini-window-show-main', () => {
+  showWindow();
+  return { success: true };
+});
+
+// ==================== 迷你悬浮窗结束 ====================
 
 // 应用就绪
 app.whenReady().then(() => {

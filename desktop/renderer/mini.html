@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>服务器监控悬浮窗</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: transparent;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .mini-window {
+      width: 280px;
+      height: 180px;
+      background: rgba(26, 26, 46, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 16px;
+      color: #fff;
+      cursor: move;
+      position: relative;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .server-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #e0e0e0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #4ade80;
+      margin-right: 8px;
+      flex-shrink: 0;
+      box-shadow: 0 0 8px #4ade80;
+    }
+
+    .status-dot.offline {
+      background: #ef4444;
+      box-shadow: 0 0 8px #ef4444;
+    }
+
+    .status-dot.warning {
+      background: #fbbf24;
+      box-shadow: 0 0 8px #fbbf24;
+    }
+
+    .close-btn {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: #999;
+      cursor: pointer;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      flex-shrink: 0;
+      margin-left: 8px;
+    }
+
+    .close-btn:hover {
+      background: #ef4444;
+      color: #fff;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .metric {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      padding: 8px 10px;
+    }
+
+    .metric-label {
+      font-size: 11px;
+      color: #888;
+      margin-bottom: 4px;
+    }
+
+    .metric-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .metric-value .unit {
+      font-size: 12px;
+      font-weight: 400;
+      color: #888;
+      margin-left: 2px;
+    }
+
+    .metric-bar {
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      margin-top: 6px;
+      overflow: hidden;
+    }
+
+    .metric-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #6366f1, #8b5cf6);
+      border-radius: 2px;
+      transition: width 0.3s ease;
+    }
+
+    .metric-bar-fill.warning {
+      background: linear-gradient(90deg, #fbbf24, #f59e0b);
+    }
+
+    .metric-bar-fill.critical {
+      background: linear-gradient(90deg, #ef4444, #dc2626);
+    }
+
+    .footer {
+      margin-top: 10px;
+      text-align: center;
+      font-size: 10px;
+      color: #666;
+    }
+
+    .expand-hint {
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .expand-hint:hover {
+      color: #8b5cf6;
+    }
+  </style>
+</head>
+<body>
+  <div class="mini-window" id="miniWindow">
+    <div class="header">
+      <div class="status-dot" id="statusDot"></div>
+      <div class="server-name" id="serverName">未连接服务器</div>
+      <button class="close-btn" id="closeBtn" title="关闭悬浮窗">×</button>
+    </div>
+    
+    <div class="metrics">
+      <div class="metric">
+        <div class="metric-label">CPU</div>
+        <div class="metric-value" id="cpuValue">--<span class="unit">%</span></div>
+        <div class="metric-bar">
+          <div class="metric-bar-fill" id="cpuBar" style="width: 0%"></div>
+        </div>
+      </div>
+      
+      <div class="metric">
+        <div class="metric-label">内存</div>
+        <div class="metric-value" id="memoryValue">--<span class="unit">%</span></div>
+        <div class="metric-bar">
+          <div class="metric-bar-fill" id="memoryBar" style="width: 0%"></div>
+        </div>
+      </div>
+      
+      <div class="metric">
+        <div class="metric-label">磁盘</div>
+        <div class="metric-value" id="diskValue">--<span class="unit">%</span></div>
+        <div class="metric-bar">
+          <div class="metric-bar-fill" id="diskBar" style="width: 0%"></div>
+        </div>
+      </div>
+      
+      <div class="metric">
+        <div class="metric-label">网络</div>
+        <div class="metric-value" id="networkValue">--<span class="unit">KB/s</span></div>
+        <div class="metric-bar">
+          <div class="metric-bar-fill" id="networkBar" style="width: 0%"></div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="footer">
+      <span class="expand-hint" id="expandHint">点击展开主窗口</span>
+    </div>
+  </div>
+
+  <script>
+    // 拖动功能
+    const miniWindow = document.getElementById('miniWindow');
+    let isDragging = false;
+    let startX, startY;
+
+    miniWindow.addEventListener('mousedown', (e) => {
+      if (e.target.closest('.close-btn') || e.target.closest('.expand-hint')) {
+        return;
+      }
+      isDragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      
+      if (window.electronAPI) {
+        // 通知主进程移动窗口
+        window.electronAPI.moveMiniWindow(dx, dy);
+      }
+      
+      startX = e.clientX;
+      startY = e.clientY;
+    });
+
+    document.addEventListener('mouseup', () => {
+      isDragging = false;
+    });
+
+    // 关闭按钮
+    document.getElementById('closeBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (window.electronAPI) {
+        window.electronAPI.hideMiniWindow();
+      }
+    });
+
+    // 点击展开主窗口
+    document.getElementById('expandHint').addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (window.electronAPI) {
+        window.electronAPI.miniWindowShowMain();
+      }
+    });
+
+    // 点击整个窗口也展开
+    miniWindow.addEventListener('click', (e) => {
+      if (e.target.closest('.close-btn') || e.target.closest('.expand-hint')) {
+        return;
+      }
+      if (window.electronAPI) {
+        window.electronAPI.miniWindowShowMain();
+      }
+    });
+
+    // 更新数据
+    function updateData(data) {
+      if (!data) return;
+
+      // 服务器名称
+      if (data.serverName) {
+        document.getElementById('serverName').textContent = data.serverName;
+      }
+
+      // 状态
+      const statusDot = document.getElementById('statusDot');
+      statusDot.className = 'status-dot';
+      if (data.status === 'offline') {
+        statusDot.classList.add('offline');
+      } else if (data.status === 'warning') {
+        statusDot.classList.add('warning');
+      }
+
+      // CPU
+      if (data.cpu !== undefined) {
+        const cpu = Math.round(data.cpu);
+        document.getElementById('cpuValue').innerHTML = cpu + '<span class="unit">%</span>';
+        const cpuBar = document.getElementById('cpuBar');
+        cpuBar.style.width = cpu + '%';
+        cpuBar.className = 'metric-bar-fill';
+        if (cpu >= 90) cpuBar.classList.add('critical');
+        else if (cpu >= 70) cpuBar.classList.add('warning');
+      }
+
+      // 内存
+      if (data.memory !== undefined) {
+        const memory = Math.round(data.memory);
+        document.getElementById('memoryValue').innerHTML = memory + '<span class="unit">%</span>';
+        const memoryBar = document.getElementById('memoryBar');
+        memoryBar.style.width = memory + '%';
+        memoryBar.className = 'metric-bar-fill';
+        if (memory >= 90) memoryBar.classList.add('critical');
+        else if (memory >= 70) memoryBar.classList.add('warning');
+      }
+
+      // 磁盘
+      if (data.disk !== undefined) {
+        const disk = Math.round(data.disk);
+        document.getElementById('diskValue').innerHTML = disk + '<span class="unit">%</span>';
+        const diskBar = document.getElementById('diskBar');
+        diskBar.style.width = disk + '%';
+        diskBar.className = 'metric-bar-fill';
+        if (disk >= 90) diskBar.classList.add('critical');
+        else if (disk >= 70) diskBar.classList.add('warning');
+      }
+
+      // 网络
+      if (data.network !== undefined) {
+        const network = data.network;
+        let displayValue, unit;
+        if (network >= 1024) {
+          displayValue = (network / 1024).toFixed(1);
+          unit = 'MB/s';
+        } else {
+          displayValue = Math.round(network);
+          unit = 'KB/s';
+        }
+        document.getElementById('networkValue').innerHTML = displayValue + '<span class="unit">' + unit + '</span>';
+        // 网络进度条按 100MB/s 为满格
+        const networkPercent = Math.min((network / 1024 / 100) * 100, 100);
+        document.getElementById('networkBar').style.width = networkPercent + '%';
+      }
+    }
+
+    // 监听数据更新
+    if (window.electronAPI) {
+      window.electronAPI.onUpdateData((data) => {
+        updateData(data);
+      });
+    }
+
+    // 模拟数据（开发时用）
+    // setTimeout(() => {
+    //   updateData({
+    //     serverName: '我的服务器',
+    //     status: 'online',
+    //     cpu: 45,
+    //     memory: 62,
+    //     disk: 78,
+    //     network: 512
+    //   });
+    // }, 500);
+  </script>
+</body>
+</html>

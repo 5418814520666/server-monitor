@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>服务器配置 - 服务器监控系统</title>
+    <title>服务器管理 - 服务器监控系统</title>
     <style>
         * {
             margin: 0;
@@ -15,71 +15,412 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
             min-height: 100vh;
-            display: flex;
-            align-items: flex-start;
-            justify-content: center;
             color: #fff;
-            padding: 40px 20px;
         }
         
-        .config-container {
-            max-width: 520px;
-            width: 100%;
+        .app-container {
+            display: flex;
+            min-height: 100vh;
         }
         
-        .config-card {
-            background: rgba(255, 255, 255, 0.08);
+        /* 侧边栏 */
+        .sidebar {
+            width: 240px;
+            background: rgba(0, 0, 0, 0.3);
             backdrop-filter: blur(20px);
-            border-radius: 20px;
-            padding: 36px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            margin-bottom: 20px;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
         }
         
-        .config-header {
-            text-align: center;
-            margin-bottom: 28px;
+        .sidebar-header {
+            padding: 0 20px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 10px;
         }
         
-        .config-icon {
-            font-size: 42px;
-            margin-bottom: 12px;
-        }
-        
-        .config-header h1 {
-            font-size: 22px;
+        .sidebar-title {
+            font-size: 18px;
             font-weight: 700;
             background: linear-gradient(90deg, #00d4ff, #7b2cbf);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }
         
-        .config-header p {
-            color: rgba(255, 255, 255, 0.6);
+        .sidebar-subtitle {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .nav-menu {
+            flex: 1;
+            padding: 10px 10px;
+        }
+        
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 4px;
+            color: rgba(255, 255, 255, 0.7);
             font-size: 13px;
         }
         
-        .section-title {
-            font-size: 15px;
-            font-weight: 600;
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.05);
             color: rgba(255, 255, 255, 0.9);
-            margin-bottom: 16px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .nav-item.active {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.2) 0%, rgba(123, 44, 191, 0.2) 100%);
+            color: #00d4ff;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+        }
+        
+        .nav-item .icon {
+            font-size: 16px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .sidebar-footer {
+            padding: 16px 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.4);
+        }
+        
+        .version-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: rgba(0, 212, 255, 0.15);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 20px;
+            color: #00d4ff;
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .version-badge:hover {
+            background: rgba(0, 212, 255, 0.25);
+        }
+        
+        /* 主内容区 */
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+        
+        .page {
+            display: none;
+        }
+        
+        .page.active {
+            display: block;
+        }
+        
+        .page-header {
+            margin-bottom: 24px;
+        }
+        
+        .page-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        
+        .page-desc {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        /* 工具栏 */
+        .toolbar {
             display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
             align-items: center;
             gap: 8px;
         }
         
-        .section-title .icon {
-            font-size: 16px;
+        .btn-primary {
+            background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+            color: #fff;
         }
         
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 212, 255, 0.3);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+        
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.3);
+        }
+        
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 8px;
+        }
+        
+        /* 卡片 */
+        .card {
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+        }
+        
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .card-title {
+            font-size: 15px;
+            font-weight: 600;
+        }
+        
+        .card-body {
+            padding: 20px;
+        }
+        
+        /* 服务器列表 */
+        .server-list {
+            display: grid;
+            gap: 12px;
+        }
+        
+        .server-item {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 16px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .server-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(0, 212, 255, 0.3);
+        }
+        
+        .server-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+        
+        .server-name {
+            font-size: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        
+        .status-online {
+            background: #10b981;
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+        }
+        
+        .status-offline {
+            background: #ef4444;
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+        }
+        
+        .status-warning {
+            background: #f59e0b;
+            box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+        }
+        
+        .status-unknown {
+            background: #6b7280;
+        }
+        
+        .server-actions {
+            display: flex;
+            gap: 6px;
+        }
+        
+        .server-url {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 8px;
+            font-family: monospace;
+        }
+        
+        .server-meta {
+            display: flex;
+            gap: 16px;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.4);
+        }
+        
+        .server-group {
+            display: inline-block;
+            padding: 2px 8px;
+            background: rgba(123, 44, 191, 0.2);
+            border-radius: 10px;
+            font-size: 10px;
+            color: #a78bfa;
+        }
+        
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: rgba(255, 255, 255, 0.4);
+        }
+        
+        .empty-state .icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        
+        .empty-state .title {
+            font-size: 16px;
+            margin-bottom: 8px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .empty-state .desc {
+            font-size: 13px;
+            margin-bottom: 20px;
+        }
+        
+        /* 模态框 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+        }
+        
+        .modal {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            color: rgba(255, 255, 255, 0.6);
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+        }
+        
+        .modal-body {
+            padding: 24px;
+        }
+        
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        
+        /* 表单 */
         .form-group {
             margin-bottom: 18px;
+        }
+        
+        .form-group:last-child {
+            margin-bottom: 0;
         }
         
         .form-group label {
@@ -90,7 +431,11 @@
             margin-bottom: 8px;
         }
         
-        .form-group input[type="text"] {
+        .form-group input[type="text"],
+        .form-group input[type="password"],
+        .form-group input[type="number"],
+        .form-group select,
+        .form-group textarea {
             width: 100%;
             padding: 11px 14px;
             background: rgba(255, 255, 255, 0.05);
@@ -101,30 +446,40 @@
             outline: none;
             transition: all 0.3s ease;
             box-sizing: border-box;
+            font-family: inherit;
         }
         
-        .form-group input[type="text"]:focus {
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
             border-color: rgba(0, 212, 255, 0.5);
             background: rgba(255, 255, 255, 0.08);
             box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
         }
         
-        .form-group input[type="text"]::placeholder {
+        .form-group input::placeholder,
+        .form-group textarea::placeholder {
             color: rgba(255, 255, 255, 0.4);
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
         }
         
         .form-hint {
             font-size: 11px;
             color: rgba(255, 255, 255, 0.4);
-            margin-top: 5px;
+            margin-top: 6px;
         }
         
-        /* 开关样式 */
+        /* 开关 */
         .switch-item {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 12px 0;
+            padding: 14px 0;
             border-bottom: 1px solid rgba(255, 255, 255, 0.06);
         }
         
@@ -140,7 +495,7 @@
             font-size: 13px;
             font-weight: 500;
             color: rgba(255, 255, 255, 0.9);
-            margin-bottom: 2px;
+            margin-bottom: 3px;
         }
         
         .switch-label .desc {
@@ -194,55 +549,174 @@
             transform: translateX(20px);
         }
         
-        .save-btn {
-            width: 100%;
-            padding: 13px;
-            background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
-            border: none;
+        /* 告警规则列表 */
+        .rule-list {
+            display: grid;
+            gap: 10px;
+        }
+        
+        .rule-item {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        
+        .rule-icon {
+            width: 40px;
+            height: 40px;
             border-radius: 10px;
-            color: #fff;
-            font-size: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        
+        .rule-cpu .rule-icon { background: rgba(59, 130, 246, 0.2); }
+        .rule-memory .rule-icon { background: rgba(16, 185, 129, 0.2); }
+        .rule-disk .rule-icon { background: rgba(245, 158, 11, 0.2); }
+        .rule-network .rule-icon { background: rgba(139, 92, 246, 0.2); }
+        .rule-offline .rule-icon { background: rgba(239, 68, 68, 0.2); }
+        
+        .rule-info {
+            flex: 1;
+        }
+        
+        .rule-name {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        
+        .rule-desc {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .rule-level {
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 10px;
             font-weight: 600;
+        }
+        
+        .level-warning {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
+        }
+        
+        .level-critical {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+        
+        .rule-actions {
+            display: flex;
+            gap: 6px;
+        }
+        
+        /* 标签页 */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 4px;
+            border-radius: 12px;
+            width: fit-content;
+        }
+        
+        .tab {
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
             cursor: pointer;
             transition: all 0.3s ease;
-            margin-top: 6px;
+            color: rgba(255, 255, 255, 0.6);
         }
         
-        .save-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(0, 212, 255, 0.3);
+        .tab:hover {
+            color: rgba(255, 255, 255, 0.9);
         }
         
-        .save-btn:active {
-            transform: translateY(0);
+        .tab.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
         }
         
-        .version-info {
-            text-align: center;
-            margin-top: 20px;
-            padding-top: 16px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        /* 告警日志 */
+        .log-list {
+            display: grid;
+            gap: 8px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .log-item {
+            background: rgba(255, 255, 255, 0.03);
+            border-left: 3px solid;
+            border-radius: 0 8px 8px 0;
+            padding: 10px 14px;
+            font-size: 12px;
+        }
+        
+        .log-item.warning {
+            border-color: #f59e0b;
+            background: rgba(245, 158, 11, 0.05);
+        }
+        
+        .log-item.critical {
+            border-color: #ef4444;
+            background: rgba(239, 68, 68, 0.05);
+        }
+        
+        .log-item.resolved {
+            opacity: 0.6;
+        }
+        
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+        
+        .log-server {
+            font-weight: 500;
+        }
+        
+        .log-time {
             color: rgba(255, 255, 255, 0.4);
             font-size: 11px;
         }
         
-        .update-badge {
+        .log-message {
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .log-status {
             display: inline-block;
-            padding: 4px 10px;
-            background: rgba(0, 212, 255, 0.2);
-            border: 1px solid rgba(0, 212, 255, 0.3);
-            border-radius: 20px;
-            color: #00d4ff;
+            padding: 2px 8px;
+            border-radius: 10px;
             font-size: 10px;
-            margin-left: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
+            margin-top: 6px;
         }
         
-        .update-badge:hover {
-            background: rgba(0, 212, 255, 0.3);
+        .status-unresolved {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
         }
         
+        .status-resolved {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+        
+        /* 快捷键输入 */
         .shortcut-input {
             display: flex;
             gap: 8px;
@@ -269,382 +743,1117 @@
             background: rgba(255, 255, 255, 0.15);
         }
         
-        .settings-section {
-            margin-bottom: 24px;
-        }
-        
-        .settings-section:last-child {
-            margin-bottom: 0;
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 60px;
+            }
+            
+            .sidebar-title,
+            .sidebar-subtitle,
+            .nav-item span,
+            .sidebar-footer {
+                display: none;
+            }
+            
+            .nav-item {
+                justify-content: center;
+                padding: 12px;
+            }
+            
+            .main-content {
+                padding: 20px;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="config-container">
-        <!-- 服务器配置 -->
-        <div class="config-card">
-            <div class="config-header">
-                <div class="config-icon">🖥️</div>
-                <h1>服务器监控系统</h1>
-                <p>桌面客户端配置</p>
+    <div class="app-container">
+        <!-- 侧边栏 -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-title">服务器监控</div>
+                <div class="sidebar-subtitle">桌面客户端</div>
             </div>
             
-            <form id="configForm">
-                <div class="settings-section">
-                    <div class="section-title">
-                        <span class="icon">🌐</span>
-                        服务器配置
+            <div class="nav-menu">
+                <div class="nav-item active" data-page="servers">
+                    <span class="icon">🖥️</span>
+                    <span>服务器管理</span>
+                </div>
+                <div class="nav-item" data-page="alarms">
+                    <span class="icon">🔔</span>
+                    <span>告警规则</span>
+                </div>
+                <div class="nav-item" data-page="logs">
+                    <span class="icon">📋</span>
+                    <span>告警日志</span>
+                </div>
+                <div class="nav-item" data-page="settings">
+                    <span class="icon">⚙️</span>
+                    <span>客户端设置</span>
+                </div>
+            </div>
+            
+            <div class="sidebar-footer">
+                <span class="version-badge" id="versionBadge">v1.0.0</span>
+            </div>
+        </div>
+        
+        <!-- 主内容区 -->
+        <div class="main-content">
+            <!-- 服务器管理页面 -->
+            <div class="page active" id="page-servers">
+                <div class="page-header">
+                    <h1 class="page-title">服务器管理</h1>
+                    <p class="page-desc">管理和监控你的所有服务器</p>
+                </div>
+                
+                <div class="toolbar">
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-secondary btn-sm" id="refreshStatusBtn">
+                            🔄 刷新状态
+                        </button>
+                    </div>
+                    <button class="btn btn-primary" id="addServerBtn">
+                        ➕ 添加服务器
+                    </button>
+                </div>
+                
+                <div class="card">
+                    <div class="card-body" id="serverListContainer">
+                        <!-- 服务器列表将通过 JS 动态生成 -->
+                        <div class="empty-state">
+                            <div class="icon">🖥️</div>
+                            <div class="title">还没有添加服务器</div>
+                            <div class="desc">点击上方"添加服务器"按钮开始添加你的第一台服务器</div>
+                            <button class="btn btn-primary btn-sm" onclick="openAddServerModal()">立即添加</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 告警规则页面 -->
+            <div class="page" id="page-alarms">
+                <div class="page-header">
+                    <h1 class="page-title">告警规则</h1>
+                    <p class="page-desc">配置服务器监控告警规则</p>
+                </div>
+                
+                <div class="toolbar">
+                    <div class="tabs">
+                        <div class="tab active" data-tab="rules">告警规则</div>
+                        <div class="tab" data-tab="logs">告警日志</div>
+                    </div>
+                    <button class="btn btn-primary" id="addRuleBtn">
+                        ➕ 添加规则
+                    </button>
+                </div>
+                
+                <div class="tab-content" id="tab-rules">
+                    <div class="card">
+                        <div class="card-body" id="ruleListContainer">
+                            <!-- 告警规则列表将通过 JS 动态生成 -->
+                            <div class="empty-state">
+                                <div class="icon">🔔</div>
+                                <div class="title">还没有告警规则</div>
+                                <div class="desc">添加告警规则，及时发现服务器异常</div>
+                                <button class="btn btn-primary btn-sm" onclick="openAddRuleModal()">添加规则</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="tab-logs" style="display: none;">
+                    <div class="card">
+                        <div class="card-body" id="logListContainer">
+                            <!-- 告警日志将通过 JS 动态生成 -->
+                            <div class="empty-state">
+                                <div class="icon">📋</div>
+                                <div class="title">暂无告警日志</div>
+                                <div class="desc">当服务器触发告警规则时，日志会显示在这里</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 告警日志页面 -->
+            <div class="page" id="page-logs">
+                <div class="page-header">
+                    <h1 class="page-title">告警日志</h1>
+                    <p class="page-desc">查看所有告警历史记录</p>
+                </div>
+                
+                <div class="toolbar">
+                    <div style="display: flex; gap: 10px;">
+                        <select id="logFilterLevel" class="btn btn-secondary btn-sm" style="padding: 6px 12px;">
+                            <option value="">全部级别</option>
+                            <option value="warning">警告</option>
+                            <option value="critical">严重</option>
+                        </select>
+                        <select id="logFilterStatus" class="btn btn-secondary btn-sm" style="padding: 6px 12px;">
+                            <option value="">全部状态</option>
+                            <option value="unresolved">未解决</option>
+                            <option value="resolved">已解决</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" id="refreshLogsBtn">
+                        🔄 刷新
+                    </button>
+                </div>
+                
+                <div class="card">
+                    <div class="card-body">
+                        <div class="log-list" id="fullLogList">
+                            <!-- 告警日志将通过 JS 动态生成 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 客户端设置页面 -->
+            <div class="page" id="page-settings">
+                <div class="page-header">
+                    <h1 class="page-title">客户端设置</h1>
+                    <p class="page-desc">自定义桌面客户端的行为和外观</p>
+                </div>
+                
+                <div class="card" style="margin-bottom: 20px;">
+                    <div class="card-header">
+                        <div class="card-title">📱 启动与运行</div>
+                    </div>
+                    <div class="card-body">
+                        <div class="switch-item">
+                            <div class="switch-label">
+                                <div class="title">开机自启动</div>
+                                <div class="desc">系统启动时自动运行监控客户端</div>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="autoStart">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="switch-item">
+                            <div class="switch-label">
+                                <div class="title">关闭时最小化到托盘</div>
+                                <div class="desc">点击关闭按钮不退出程序，最小化到系统托盘</div>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="closeToTray">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="switch-item">
+                            <div class="switch-label">
+                                <div class="title">最小化时到托盘</div>
+                                <div class="desc">点击最小化按钮时隐藏到系统托盘</div>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="minimizeToTray">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card" style="margin-bottom: 20px;">
+                    <div class="card-header">
+                        <div class="card-title">🔔 通知与提醒</div>
+                    </div>
+                    <div class="card-body">
+                        <div class="switch-item">
+                            <div class="switch-label">
+                                <div class="title">桌面通知</div>
+                                <div class="desc">服务器异常或更新时推送系统通知</div>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="enableNotifications">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card" style="margin-bottom: 20px;">
+                    <div class="card-header">
+                        <div class="card-title">🪟 窗口设置</div>
+                    </div>
+                    <div class="card-body">
+                        <div class="switch-item">
+                            <div class="switch-label">
+                                <div class="title">窗口置顶</div>
+                                <div class="desc">监控窗口始终显示在最前面</div>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="alwaysOnTop">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card" style="margin-bottom: 20px;">
+                    <div class="card-header">
+                        <div class="card-title">⌨️ 快捷键</div>
+                    </div>
+                    <div class="card-body">
+                        <div class="switch-item">
+                            <div class="switch-label">
+                                <div class="title">启用全局快捷键</div>
+                                <div class="desc">使用快捷键快速调出/隐藏监控窗口</div>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="enableGlobalShortcut">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="form-group" style="margin-top: 16px;">
+                            <label for="globalShortcut">显示/隐藏窗口快捷键</label>
+                            <div class="shortcut-input">
+                                <input type="text" id="globalShortcut" placeholder="例如: Ctrl+Shift+M">
+                                <button type="button" class="shortcut-btn" id="saveShortcutBtn">保存</button>
+                            </div>
+                            <div class="form-hint">支持 Ctrl、Shift、Alt 组合键，例如 Ctrl+Shift+M</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">ℹ️ 关于</div>
+                    </div>
+                    <div class="card-body">
+                        <div style="text-align: center; padding: 20px 0;">
+                            <div style="font-size: 48px; margin-bottom: 16px;">🖥️</div>
+                            <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">服务器监控系统</div>
+                            <div style="font-size: 13px; color: rgba(255, 255, 255, 0.5); margin-bottom: 20px;" id="aboutVersion">版本 v1.0.0</div>
+                            <div style="display: flex; gap: 10px; justify-content: center;">
+                                <button class="btn btn-secondary btn-sm" id="checkUpdateBtn">
+                                    检查更新
+                                </button>
+                                <button class="btn btn-secondary btn-sm" id="openGithubBtn">
+                                    GitHub 仓库
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 添加服务器模态框 -->
+    <div class="modal-overlay" id="serverModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title" id="serverModalTitle">添加服务器</div>
+                <button class="modal-close" onclick="closeServerModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="serverForm">
+                    <input type="hidden" id="serverId">
+                    
+                    <div class="form-group">
+                        <label for="serverName">服务器名称</label>
+                        <input type="text" id="serverName" placeholder="例如：生产服务器" required>
                     </div>
                     
                     <div class="form-group">
                         <label for="serverUrl">服务器地址</label>
-                        <input type="text" id="serverUrl" placeholder="例如: http://192.168.1.100:3000" required>
-                        <div class="form-hint">请输入服务器监控系统的访问地址</div>
+                        <input type="text" id="serverUrl" placeholder="例如：http://192.168.1.100:3000" required>
+                        <div class="form-hint">请输入服务器监控系统的完整访问地址</div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="serverGroup">分组</label>
+                            <input type="text" id="serverGroup" placeholder="默认分组">
+                        </div>
+                        <div class="form-group">
+                            <label for="serverUsername">用户名（可选）</label>
+                            <input type="text" id="serverUsername" placeholder="admin">
+                        </div>
                     </div>
                     
                     <div class="form-group">
-                        <label for="serverName">服务器名称（可选）</label>
-                        <input type="text" id="serverName" placeholder="例如: 生产服务器">
-                        <div class="form-hint">给这个服务器起个名字，方便识别</div>
+                        <label for="serverPassword">密码（可选）</label>
+                        <input type="password" id="serverPassword" placeholder="留空则不保存密码">
+                        <div class="form-hint">密码将保存在本地，用于自动登录</div>
                     </div>
-                    
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <button type="button" class="btn-secondary" id="manageServersBtn" style="width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: rgba(255,255,255,0.8); cursor: pointer; font-size: 13px; transition: all 0.3s ease;">
-                            📋 管理多个服务器 →
-                        </button>
-                    </div>
-                    
-                    <div class="form-group" style="margin-bottom: 0; margin-top: 12px;">
-                        <button type="button" class="btn-secondary" id="alarmManageBtn" style="width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: rgba(255,255,255,0.8); cursor: pointer; font-size: 13px; transition: all 0.3s ease;">
-                            🔔 告警管理 →
-                        </button>
-                    </div>
-                </div>
-                
-                <button type="submit" class="save-btn">
-                    保存并连接
-                </button>
-            </form>
-        </div>
-        
-        <!-- 客户端设置 -->
-        <div class="config-card">
-            <div class="settings-section">
-                <div class="section-title">
-                    <span class="icon">⚙️</span>
-                    客户端设置
-                </div>
-                
-                <div class="switch-item">
-                    <div class="switch-label">
-                        <div class="title">开机自启动</div>
-                        <div class="desc">系统启动时自动运行监控客户端</div>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" id="autoStart">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                
-                <div class="switch-item">
-                    <div class="switch-label">
-                        <div class="title">桌面通知</div>
-                        <div class="desc">服务器异常或更新时推送系统通知</div>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" id="enableNotifications">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                
-                <div class="switch-item">
-                    <div class="switch-label">
-                        <div class="title">关闭时最小化到托盘</div>
-                        <div class="desc">点击关闭按钮不退出程序，最小化到系统托盘</div>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" id="closeToTray">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                
-                <div class="switch-item">
-                    <div class="switch-label">
-                        <div class="title">最小化时到托盘</div>
-                        <div class="desc">点击最小化按钮时隐藏到系统托盘</div>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" id="minimizeToTray">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                
-                <div class="switch-item">
-                    <div class="switch-label">
-                        <div class="title">窗口置顶</div>
-                        <div class="desc">监控窗口始终显示在最前面</div>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" id="alwaysOnTop">
-                        <span class="slider"></span>
-                    </label>
-                </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeServerModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveServer()">保存</button>
             </div>
         </div>
-        
-        <!-- 快捷键设置 -->
-        <div class="config-card">
-            <div class="settings-section">
-                <div class="section-title">
-                    <span class="icon">⌨️</span>
-                    快捷键设置
-                </div>
-                
-                <div class="switch-item">
-                    <div class="switch-label">
-                        <div class="title">启用全局快捷键</div>
-                        <div class="desc">使用快捷键快速调出/隐藏监控窗口</div>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" id="enableGlobalShortcut">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                
-                <div class="form-group" style="margin-top: 16px;">
-                    <label for="globalShortcut">显示/隐藏窗口快捷键</label>
-                    <div class="shortcut-input">
-                        <input type="text" id="globalShortcut" placeholder="例如: Ctrl+Shift+M">
-                        <button type="button" class="shortcut-btn" id="testShortcutBtn">测试</button>
-                    </div>
-                    <div class="form-hint">支持 Ctrl、Shift、Alt 组合键，例如 Ctrl+Shift+M</div>
-                </div>
+    </div>
+    
+    <!-- 添加告警规则模态框 -->
+    <div class="modal-overlay" id="ruleModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title" id="ruleModalTitle">添加告警规则</div>
+                <button class="modal-close" onclick="closeRuleModal()">×</button>
             </div>
-            
-            <div class="version-info">
-                <span id="versionText">版本 v1.0.0</span>
-                <span class="update-badge" id="checkUpdateBtn">检查更新</span>
+            <div class="modal-body">
+                <form id="ruleForm">
+                    <input type="hidden" id="ruleId">
+                    
+                    <div class="form-group">
+                        <label for="ruleType">告警类型</label>
+                        <select id="ruleType">
+                            <option value="cpu">CPU 使用率</option>
+                            <option value="memory">内存使用率</option>
+                            <option value="disk">磁盘使用率</option>
+                            <option value="network">网络速率</option>
+                            <option value="offline">服务器离线</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" id="thresholdGroup">
+                        <label for="ruleThreshold">告警阈值</label>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <input type="number" id="ruleThreshold" value="80" min="0" max="100" style="flex: 1;">
+                            <span id="thresholdUnit" style="font-size: 13px; color: rgba(255,255,255,0.6);">%</span>
+                        </div>
+                        <div class="form-hint">当指标超过此值时触发告警</div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="ruleDuration">持续时间（秒）</label>
+                            <input type="number" id="ruleDuration" value="60" min="10">
+                            <div class="form-hint">持续超过阈值才触发</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="ruleLevel">告警级别</label>
+                            <select id="ruleLevel">
+                                <option value="warning">警告</option>
+                                <option value="critical">严重</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="ruleServer">适用服务器</label>
+                        <select id="ruleServer">
+                            <option value="">所有服务器</option>
+                        </select>
+                        <div class="form-hint">选择应用此规则的服务器</div>
+                    </div>
+                    
+                    <div class="switch-item" style="margin-top: 16px;">
+                        <div class="switch-label">
+                            <div class="title">启用规则</div>
+                            <div class="desc">关闭后此规则暂时不生效</div>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="ruleEnabled" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeRuleModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveRule()">保存</button>
             </div>
         </div>
     </div>
     
     <script>
-        // 检查是否为桌面端
         const isDesktop = window.electronAPI && window.electronAPI.isDesktop;
+        let servers = [];
+        let alarmRules = [];
+        let alarmLogs = [];
+        let currentPage = 'servers';
         
-        // DOM 元素
-        const configForm = document.getElementById('configForm');
-        const serverUrlInput = document.getElementById('serverUrl');
-        const serverNameInput = document.getElementById('serverName');
-        const versionText = document.getElementById('versionText');
-        const checkUpdateBtn = document.getElementById('checkUpdateBtn');
-        const manageServersBtn = document.getElementById('manageServersBtn');
-        const alarmManageBtn = document.getElementById('alarmManageBtn');
-        
-        // 设置开关
-        const autoStartSwitch = document.getElementById('autoStart');
-        const enableNotificationsSwitch = document.getElementById('enableNotifications');
-        const closeToTraySwitch = document.getElementById('closeToTray');
-        const minimizeToTraySwitch = document.getElementById('minimizeToTray');
-        const alwaysOnTopSwitch = document.getElementById('alwaysOnTop');
-        const enableGlobalShortcutSwitch = document.getElementById('enableGlobalShortcut');
-        const globalShortcutInput = document.getElementById('globalShortcut');
-        const testShortcutBtn = document.getElementById('testShortcutBtn');
-        
-        // 加载已保存的服务器配置
-        function loadServerConfig() {
-            const savedUrl = localStorage.getItem('server_url') || '';
-            const savedName = localStorage.getItem('server_name') || '';
+        // 初始化
+        async function init() {
+            loadVersion();
+            setupNavigation();
+            setupTabs();
             
-            if (savedUrl) {
-                serverUrlInput.value = savedUrl;
+            if (isDesktop) {
+                await loadServers();
+                await loadAlarmRules();
+                await loadAlarmLogs();
+                loadClientConfig();
+                setupConfigListeners();
             }
-            if (savedName) {
-                serverNameInput.value = savedName;
+            
+            renderServerList();
+            renderRuleList();
+            renderLogList();
+        }
+        
+        // 加载版本号
+        async function loadVersion() {
+            if (isDesktop && window.electronAPI.getVersion) {
+                const result = await window.electronAPI.getVersion();
+                const version = result.version || '1.0.0';
+                document.getElementById('versionBadge').textContent = 'v' + version;
+                document.getElementById('aboutVersion').textContent = '版本 v' + version;
             }
         }
         
-        // 保存服务器配置
-        function saveServerConfig(url, name) {
-            localStorage.setItem('server_url', url);
-            localStorage.setItem('server_name', name || '');
+        // 设置导航
+        function setupNavigation() {
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const page = item.dataset.page;
+                    switchPage(page);
+                });
+            });
         }
         
-        // 加载客户端配置
-        function loadClientConfig() {
-            if (!isDesktop || !window.electronAPI.getConfig) return;
+        // 切换页面
+        function switchPage(page) {
+            currentPage = page;
             
-            window.electronAPI.getConfig().then((config) => {
-                if (config) {
-                    autoStartSwitch.checked = config.autoStart || false;
-                    enableNotificationsSwitch.checked = config.enableNotifications !== false;
-                    closeToTraySwitch.checked = config.closeToTray !== false;
-                    minimizeToTraySwitch.checked = config.minimizeToTray !== false;
-                    alwaysOnTopSwitch.checked = config.alwaysOnTop || false;
-                    enableGlobalShortcutSwitch.checked = config.enableGlobalShortcut !== false;
-                    globalShortcutInput.value = config.globalShortcut || 'Ctrl+Shift+M';
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.toggle('active', item.dataset.page === page);
+            });
+            
+            document.querySelectorAll('.page').forEach(p => {
+                p.classList.toggle('active', p.id === 'page-' + page);
+            });
+            
+            if (page === 'logs') {
+                loadAlarmLogs();
+            }
+        }
+        
+        // 设置标签页
+        function setupTabs() {
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabName = tab.dataset.tab;
+                    
+                    document.querySelectorAll('.tab').forEach(t => {
+                        t.classList.toggle('active', t.dataset.tab === tabName);
+                    });
+                    
+                    document.getElementById('tab-rules').style.display = tabName === 'rules' ? 'block' : 'none';
+                    document.getElementById('tab-logs').style.display = tabName === 'logs' ? 'block' : 'none';
+                    
+                    if (tabName === 'logs') {
+                        loadAlarmLogs();
+                    }
+                });
+            });
+        }
+        
+        // 加载服务器列表
+        async function loadServers() {
+            if (!isDesktop || !window.electronAPI.getServers) return;
+            
+            try {
+                const result = await window.electronAPI.getServers();
+                if (result.success) {
+                    servers = result.servers || [];
+                    renderServerList();
+                    updateServerSelect();
                 }
-            });
-        }
-        
-        // 保存客户端配置
-        function saveClientConfig() {
-            if (!isDesktop || !window.electronAPI.setConfig) return;
-            
-            const config = {
-                autoStart: autoStartSwitch.checked,
-                enableNotifications: enableNotificationsSwitch.checked,
-                closeToTray: closeToTraySwitch.checked,
-                minimizeToTray: minimizeToTraySwitch.checked,
-                alwaysOnTop: alwaysOnTopSwitch.checked,
-                enableGlobalShortcut: enableGlobalShortcutSwitch.checked,
-                globalShortcut: globalShortcutInput.value.trim() || 'Ctrl+Shift+M'
-            };
-            
-            window.electronAPI.setConfig(config).then((result) => {
-                console.log('配置已保存:', result);
-            });
-        }
-        
-        // 跳转到监控页面
-        function goToMonitor() {
-            const serverUrl = localStorage.getItem('server_url');
-            if (isDesktop && window.electronAPI.loadServer && serverUrl) {
-                window.electronAPI.loadServer(serverUrl);
+            } catch (e) {
+                console.error('加载服务器列表失败:', e);
             }
         }
         
-        // 表单提交
-        configForm.addEventListener('submit', (e) => {
-            e.preventDefault();
+        // 渲染服务器列表
+        function renderServerList() {
+            const container = document.getElementById('serverListContainer');
             
-            let serverUrl = serverUrlInput.value.trim();
-            const serverName = serverNameInput.value.trim();
-            
-            // 验证 URL
-            if (!serverUrl) {
-                alert('请输入服务器地址');
+            if (servers.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">🖥️</div>
+                        <div class="title">还没有添加服务器</div>
+                        <div class="desc">点击上方"添加服务器"按钮开始添加你的第一台服务器</div>
+                        <button class="btn btn-primary btn-sm" onclick="openAddServerModal()">立即添加</button>
+                    </div>
+                `;
                 return;
             }
             
-            // 自动添加 http:// 前缀
-            if (!serverUrl.startsWith('http://') && !serverUrl.startsWith('https://')) {
-                serverUrl = 'http://' + serverUrl;
-            }
+            let html = '<div class="server-list">';
             
-            // 移除末尾的斜杠
-            serverUrl = serverUrl.replace(/\/+$/, '');
-            
-            // 保存服务器配置
-            saveServerConfig(serverUrl, serverName);
-            
-            // 保存客户端配置
-            saveClientConfig();
-            
-            // 跳转到监控页面
-            goToMonitor();
-        });
-        
-        // 开关变化时保存配置
-        const switches = [
-            autoStartSwitch,
-            enableNotificationsSwitch,
-            closeToTraySwitch,
-            minimizeToTraySwitch,
-            alwaysOnTopSwitch,
-            enableGlobalShortcutSwitch
-        ];
-        
-        switches.forEach((sw) => {
-            sw.addEventListener('change', () => {
-                saveClientConfig();
-            });
-        });
-        
-        // 快捷键输入变化时保存
-        globalShortcutInput.addEventListener('blur', () => {
-            saveClientConfig();
-        });
-        
-        // 测试快捷键按钮
-        testShortcutBtn.addEventListener('click', () => {
-            if (isDesktop && window.electronAPI.sendNotification) {
-                window.electronAPI.sendNotification(
-                    '快捷键测试',
-                    '快捷键设置成功！按下快捷键试试吧~'
-                );
-                alert('已发送测试通知，请查看系统通知');
-            } else {
-                alert('当前环境不支持通知功能');
-            }
-        });
-        
-        // 检查更新
-        checkUpdateBtn.addEventListener('click', () => {
-            if (isDesktop && window.electronAPI.checkUpdates) {
-                window.electronAPI.checkUpdates();
-            }
-        });
-        
-        // 管理服务器
-        if (manageServersBtn) {
-            manageServersBtn.addEventListener('click', () => {
-                window.location.href = 'servers.html';
-            });
-        }
-        
-        // 告警管理
-        if (alarmManageBtn) {
-            alarmManageBtn.addEventListener('click', () => {
-                window.location.href = 'alarms.html';
-            });
-        }
-        
-        // 监听更新状态
-        if (isDesktop && window.electronAPI.onUpdateStatus) {
-            window.electronAPI.onUpdateStatus((data) => {
-                console.log('更新状态:', data);
+            servers.forEach(server => {
+                const statusClass = 'status-' + (server.status || 'unknown');
+                const statusText = {
+                    'online': '在线',
+                    'offline': '离线',
+                    'warning': '告警',
+                    'unknown': '未知'
+                }[server.status || 'unknown'];
                 
-                if (data.status === 'available') {
-                    if (confirm(`发现新版本 v${data.data.version}\n是否现在下载更新？`)) {
-                        window.electronAPI.downloadUpdate();
-                    }
-                } else if (data.status === 'not-available') {
-                    alert('当前已是最新版本');
-                } else if (data.status === 'error') {
-                    alert('检查更新失败: ' + data.data.error);
-                } else if (data.status === 'downloaded') {
-                    if (confirm('更新下载完成，是否现在重启安装？')) {
-                        window.electronAPI.installUpdate();
+                html += `
+                    <div class="server-item" onclick="connectServer('${server.id}')">
+                        <div class="server-item-header">
+                            <div class="server-name">
+                                <span class="status-badge ${statusClass}"></span>
+                                ${escapeHtml(server.name)}
+                            </div>
+                            <div class="server-actions" onclick="event.stopPropagation()">
+                                <button class="btn btn-secondary btn-sm" onclick="editServer('${server.id}')">编辑</button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteServer('${server.id}')">删除</button>
+                            </div>
+                        </div>
+                        <div class="server-url">${escapeHtml(server.url)}</div>
+                        <div class="server-meta">
+                            <span class="server-group">${escapeHtml(server.group || '默认分组')}</span>
+                            <span>状态: ${statusText}</span>
+                            ${server.lastCheck ? `<span>检测时间: ${formatTime(server.lastCheck)}</span>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+        
+        // 更新服务器下拉选择
+        function updateServerSelect() {
+            const select = document.getElementById('ruleServer');
+            if (!select) return;
+            
+            select.innerHTML = '<option value="">所有服务器</option>';
+            servers.forEach(server => {
+                select.innerHTML += `<option value="${server.id}">${escapeHtml(server.name)}</option>`;
+            });
+        }
+        
+        // 连接服务器
+        async function connectServer(serverId) {
+            if (!isDesktop || !window.electronAPI.connectServer) return;
+            
+            try {
+                const result = await window.electronAPI.connectServer(serverId);
+                if (result.success) {
+                    console.log('正在连接服务器:', result.server.name);
+                }
+            } catch (e) {
+                console.error('连接服务器失败:', e);
+            }
+        }
+        
+        // 打开添加服务器模态框
+        function openAddServerModal() {
+            document.getElementById('serverModalTitle').textContent = '添加服务器';
+            document.getElementById('serverId').value = '';
+            document.getElementById('serverName').value = '';
+            document.getElementById('serverUrl').value = '';
+            document.getElementById('serverGroup').value = '默认分组';
+            document.getElementById('serverUsername').value = '';
+            document.getElementById('serverPassword').value = '';
+            document.getElementById('serverModal').classList.add('active');
+        }
+        
+        // 编辑服务器
+        function editServer(serverId) {
+            const server = servers.find(s => s.id === serverId);
+            if (!server) return;
+            
+            document.getElementById('serverModalTitle').textContent = '编辑服务器';
+            document.getElementById('serverId').value = server.id;
+            document.getElementById('serverName').value = server.name || '';
+            document.getElementById('serverUrl').value = server.url || '';
+            document.getElementById('serverGroup').value = server.group || '默认分组';
+            document.getElementById('serverUsername').value = server.username || '';
+            document.getElementById('serverPassword').value = server.password || '';
+            document.getElementById('serverModal').classList.add('active');
+        }
+        
+        // 关闭服务器模态框
+        function closeServerModal() {
+            document.getElementById('serverModal').classList.remove('active');
+        }
+        
+        // 保存服务器
+        async function saveServer() {
+            if (!isDesktop) return;
+            
+            const id = document.getElementById('serverId').value;
+            const serverData = {
+                name: document.getElementById('serverName').value,
+                url: document.getElementById('serverUrl').value,
+                group: document.getElementById('serverGroup').value || '默认分组',
+                username: document.getElementById('serverUsername').value,
+                password: document.getElementById('serverPassword').value
+            };
+            
+            // 自动添加 http:// 前缀
+            if (!serverData.url.startsWith('http://') && !serverData.url.startsWith('https://')) {
+                serverData.url = 'http://' + serverData.url;
+            }
+            
+            try {
+                let result;
+                if (id) {
+                    result = await window.electronAPI.updateServer(id, serverData);
+                } else {
+                    result = await window.electronAPI.addServer(serverData);
+                }
+                
+                if (result.success) {
+                    await loadServers();
+                    closeServerModal();
+                    
+                    // 检测新服务器状态
+                    if (result.server) {
+                        window.electronAPI.checkServerStatus(result.server.id);
                     }
                 }
+            } catch (e) {
+                console.error('保存服务器失败:', e);
+                alert('保存失败: ' + e.message);
+            }
+        }
+        
+        // 删除服务器
+        async function deleteServer(serverId) {
+            if (!confirm('确定要删除这台服务器吗？')) return;
+            
+            if (!isDesktop || !window.electronAPI.deleteServer) return;
+            
+            try {
+                const result = await window.electronAPI.deleteServer(serverId);
+                if (result.success) {
+                    await loadServers();
+                }
+            } catch (e) {
+                console.error('删除服务器失败:', e);
+            }
+        }
+        
+        // 刷新服务器状态
+        async function refreshServerStatus() {
+            if (!isDesktop || !window.electronAPI.checkAllServersStatus) return;
+            
+            try {
+                await window.electronAPI.checkAllServersStatus();
+                await loadServers();
+            } catch (e) {
+                console.error('刷新服务器状态失败:', e);
+            }
+        }
+        
+        // 加载告警规则
+        async function loadAlarmRules() {
+            if (!isDesktop || !window.electronAPI.getAlarmRules) return;
+            
+            try {
+                const result = await window.electronAPI.getAlarmRules();
+                if (result.success) {
+                    alarmRules = result.rules || [];
+                    renderRuleList();
+                }
+            } catch (e) {
+                console.error('加载告警规则失败:', e);
+            }
+        }
+        
+        // 渲染告警规则列表
+        function renderRuleList() {
+            const container = document.getElementById('ruleListContainer');
+            
+            if (alarmRules.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">🔔</div>
+                        <div class="title">还没有告警规则</div>
+                        <div class="desc">添加告警规则，及时发现服务器异常</div>
+                        <button class="btn btn-primary btn-sm" onclick="openAddRuleModal()">添加规则</button>
+                    </div>
+                `;
+                return;
+            }
+            
+            const typeNames = {
+                'cpu': 'CPU 使用率',
+                'memory': '内存使用率',
+                'disk': '磁盘使用率',
+                'network': '网络速率',
+                'offline': '服务器离线'
+            };
+            
+            const typeIcons = {
+                'cpu': '💻',
+                'memory': '🧠',
+                'disk': '💾',
+                'network': '🌐',
+                'offline': '⚠️'
+            };
+            
+            let html = '<div class="rule-list">';
+            
+            alarmRules.forEach(rule => {
+                const serverName = rule.serverId 
+                    ? (servers.find(s => s.id === rule.serverId)?.name || '未知服务器')
+                    : '所有服务器';
+                
+                let thresholdText = '';
+                if (rule.type === 'offline') {
+                    thresholdText = `离线 ${rule.duration} 秒`;
+                } else if (rule.type === 'network') {
+                    thresholdText = `超过 ${rule.threshold} MB/s`;
+                } else {
+                    thresholdText = `超过 ${rule.threshold}%`;
+                }
+                
+                html += `
+                    <div class="rule-item rule-${rule.type}">
+                        <div class="rule-icon">${typeIcons[rule.type] || '📊'}</div>
+                        <div class="rule-info">
+                            <div class="rule-name">${typeNames[rule.type] || rule.type}</div>
+                            <div class="rule-desc">${thresholdText} · 持续 ${rule.duration}秒 · ${serverName}</div>
+                        </div>
+                        <span class="rule-level level-${rule.level}">${rule.level === 'critical' ? '严重' : '警告'}</span>
+                        <div class="rule-actions">
+                            <button class="btn btn-secondary btn-sm" onclick="editRule('${rule.id}')">编辑</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteRule('${rule.id}')">删除</button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+        
+        // 打开添加规则模态框
+        function openAddRuleModal() {
+            document.getElementById('ruleModalTitle').textContent = '添加告警规则';
+            document.getElementById('ruleId').value = '';
+            document.getElementById('ruleType').value = 'cpu';
+            document.getElementById('ruleThreshold').value = 80;
+            document.getElementById('ruleDuration').value = 60;
+            document.getElementById('ruleLevel').value = 'warning';
+            document.getElementById('ruleServer').value = '';
+            document.getElementById('ruleEnabled').checked = true;
+            updateThresholdDisplay();
+            document.getElementById('ruleModal').classList.add('active');
+        }
+        
+        // 编辑规则
+        function editRule(ruleId) {
+            const rule = alarmRules.find(r => r.id === ruleId);
+            if (!rule) return;
+            
+            document.getElementById('ruleModalTitle').textContent = '编辑告警规则';
+            document.getElementById('ruleId').value = rule.id;
+            document.getElementById('ruleType').value = rule.type;
+            document.getElementById('ruleThreshold').value = rule.threshold || 80;
+            document.getElementById('ruleDuration').value = rule.duration || 60;
+            document.getElementById('ruleLevel').value = rule.level || 'warning';
+            document.getElementById('ruleServer').value = rule.serverId || '';
+            document.getElementById('ruleEnabled').checked = rule.enabled !== false;
+            updateThresholdDisplay();
+            document.getElementById('ruleModal').classList.add('active');
+        }
+        
+        // 关闭规则模态框
+        function closeRuleModal() {
+            document.getElementById('ruleModal').classList.remove('active');
+        }
+        
+        // 更新阈值显示
+        function updateThresholdDisplay() {
+            const type = document.getElementById('ruleType').value;
+            const thresholdGroup = document.getElementById('thresholdGroup');
+            const thresholdUnit = document.getElementById('thresholdUnit');
+            
+            if (type === 'offline') {
+                thresholdGroup.style.display = 'none';
+            } else {
+                thresholdGroup.style.display = 'block';
+                if (type === 'network') {
+                    thresholdUnit.textContent = 'MB/s';
+                } else {
+                    thresholdUnit.textContent = '%';
+                }
+            }
+        }
+        
+        // 保存规则
+        async function saveRule() {
+            if (!isDesktop) return;
+            
+            const id = document.getElementById('ruleId').value;
+            const ruleData = {
+                type: document.getElementById('ruleType').value,
+                threshold: parseFloat(document.getElementById('ruleThreshold').value) || 80,
+                duration: parseInt(document.getElementById('ruleDuration').value) || 60,
+                level: document.getElementById('ruleLevel').value,
+                serverId: document.getElementById('ruleServer').value || null,
+                enabled: document.getElementById('ruleEnabled').checked
+            };
+            
+            try {
+                let result;
+                if (id) {
+                    result = await window.electronAPI.updateAlarmRule(id, ruleData);
+                } else {
+                    result = await window.electronAPI.addAlarmRule(ruleData);
+                }
+                
+                if (result.success) {
+                    await loadAlarmRules();
+                    closeRuleModal();
+                }
+            } catch (e) {
+                console.error('保存规则失败:', e);
+                alert('保存失败: ' + e.message);
+            }
+        }
+        
+        // 删除规则
+        async function deleteRule(ruleId) {
+            if (!confirm('确定要删除这条告警规则吗？')) return;
+            
+            if (!isDesktop || !window.electronAPI.deleteAlarmRule) return;
+            
+            try {
+                const result = await window.electronAPI.deleteAlarmRule(ruleId);
+                if (result.success) {
+                    await loadAlarmRules();
+                }
+            } catch (e) {
+                console.error('删除规则失败:', e);
+            }
+        }
+        
+        // 加载告警日志
+        async function loadAlarmLogs() {
+            if (!isDesktop || !window.electronAPI.getAlarmLogs) return;
+            
+            try {
+                const options = {};
+                const levelFilter = document.getElementById('logFilterLevel')?.value;
+                const statusFilter = document.getElementById('logFilterStatus')?.value;
+                
+                if (levelFilter) {
+                    options.level = levelFilter;
+                }
+                if (statusFilter === 'unresolved') {
+                    options.resolved = false;
+                } else if (statusFilter === 'resolved') {
+                    options.resolved = true;
+                }
+                
+                const result = await window.electronAPI.getAlarmLogs(options);
+                if (result.success) {
+                    alarmLogs = result.logs || [];
+                    renderLogList();
+                }
+            } catch (e) {
+                console.error('加载告警日志失败:', e);
+            }
+        }
+        
+        // 渲染告警日志
+        function renderLogList() {
+            const containers = [
+                document.getElementById('logListContainer'),
+                document.getElementById('fullLogList')
+            ];
+            
+            containers.forEach(container => {
+                if (!container) return;
+                
+                if (alarmLogs.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="icon">📋</div>
+                            <div class="title">暂无告警日志</div>
+                            <div class="desc">当服务器触发告警规则时，日志会显示在这里</div>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                let html = '';
+                
+                alarmLogs.forEach(log => {
+                    html += `
+                        <div class="log-item ${log.level} ${log.resolved ? 'resolved' : ''}">
+                            <div class="log-header">
+                                <span class="log-server">${escapeHtml(log.serverName)}</span>
+                                <span class="log-time">${formatTime(log.timestamp)}</span>
+                            </div>
+                            <div class="log-message">${escapeHtml(log.message)}</div>
+                            <span class="log-status ${log.resolved ? 'status-resolved' : 'status-unresolved'}">
+                                ${log.resolved ? '已解决' : '未解决'}
+                            </span>
+                            ${!log.resolved ? `<button class="btn btn-secondary btn-sm" style="margin-left: 8px; margin-top: 6px;" onclick="resolveAlarm('${log.id}')">标记已解决</button>` : ''}
+                        </div>
+                    `;
+                });
+                
+                container.innerHTML = html;
             });
         }
         
-        // 监听配置更新
-        if (isDesktop && window.electronAPI.onConfigUpdate) {
-            window.electronAPI.onConfigUpdate((config) => {
-                console.log('配置已更新:', config);
-                // 同步 UI 状态
-                autoStartSwitch.checked = config.autoStart || false;
-                enableNotificationsSwitch.checked = config.enableNotifications !== false;
-                closeToTraySwitch.checked = config.closeToTray !== false;
-                minimizeToTraySwitch.checked = config.minimizeToTray !== false;
-                alwaysOnTopSwitch.checked = config.alwaysOnTop || false;
-                enableGlobalShortcutSwitch.checked = config.enableGlobalShortcut !== false;
-                globalShortcutInput.value = config.globalShortcut || 'Ctrl+Shift+M';
-            });
+        // 解决告警
+        async function resolveAlarm(logId) {
+            if (!isDesktop || !window.electronAPI.resolveAlarm) return;
+            
+            try {
+                const result = await window.electronAPI.resolveAlarm(logId);
+                if (result.success) {
+                    await loadAlarmLogs();
+                }
+            } catch (e) {
+                console.error('解决告警失败:', e);
+            }
         }
         
-        // 获取版本号
-        if (isDesktop && window.electronAPI.getVersion) {
-            window.electronAPI.getVersion().then((result) => {
-                versionText.textContent = `版本 v${result.version}`;
-            });
+        // 加载客户端配置
+        async function loadClientConfig() {
+            if (!isDesktop || !window.electronAPI.getConfig) return;
+            
+            try {
+                const config = await window.electronAPI.getConfig();
+                
+                document.getElementById('autoStart').checked = config.autoStart || false;
+                document.getElementById('enableNotifications').checked = config.enableNotifications !== false;
+                document.getElementById('closeToTray').checked = config.closeToTray !== false;
+                document.getElementById('minimizeToTray').checked = config.minimizeToTray !== false;
+                document.getElementById('alwaysOnTop').checked = config.alwaysOnTop || false;
+                document.getElementById('enableGlobalShortcut').checked = config.enableGlobalShortcut !== false;
+                document.getElementById('globalShortcut').value = config.globalShortcut || 'Ctrl+Shift+M';
+            } catch (e) {
+                console.error('加载配置失败:', e);
+            }
         }
+        
+        // 设置配置监听器
+        function setupConfigListeners() {
+            const switches = ['autoStart', 'enableNotifications', 'closeToTray', 'minimizeToTray', 'alwaysOnTop', 'enableGlobalShortcut'];
+            
+            switches.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('change', async () => {
+                        if (!isDesktop || !window.electronAPI.setConfig) return;
+                        
+                        try {
+                            await window.electronAPI.setConfig({ [id]: el.checked });
+                        } catch (e) {
+                            console.error('更新配置失败:', e);
+                        }
+                    });
+                }
+            });
+            
+            // 保存快捷键
+            document.getElementById('saveShortcutBtn')?.addEventListener('click', async () => {
+                if (!isDesktop || !window.electronAPI.setConfig) return;
+                
+                const shortcut = document.getElementById('globalShortcut').value;
+                try {
+                    await window.electronAPI.setConfig({ globalShortcut: shortcut });
+                    alert('快捷键已保存');
+                } catch (e) {
+                    console.error('保存快捷键失败:', e);
+                    alert('保存失败: ' + e.message);
+                }
+            });
+            
+            // 检查更新
+            document.getElementById('checkUpdateBtn')?.addEventListener('click', () => {
+                if (isDesktop && window.electronAPI.checkUpdates) {
+                    window.electronAPI.checkUpdates();
+                }
+            });
+            
+            // 打开 GitHub
+            document.getElementById('openGithubBtn')?.addEventListener('click', () => {
+                if (isDesktop && window.electronAPI.openExternal) {
+                    window.electronAPI.openExternal('https://github.com/5418814520666/server-monitor');
+                }
+            });
+            
+            // 添加服务器按钮
+            document.getElementById('addServerBtn')?.addEventListener('click', openAddServerModal);
+            
+            // 刷新状态按钮
+            document.getElementById('refreshStatusBtn')?.addEventListener('click', refreshServerStatus);
+            
+            // 添加规则按钮
+            document.getElementById('addRuleBtn')?.addEventListener('click', openAddRuleModal);
+            
+            // 刷新日志按钮
+            document.getElementById('refreshLogsBtn')?.addEventListener('click', loadAlarmLogs);
+            
+            // 日志过滤器
+            document.getElementById('logFilterLevel')?.addEventListener('change', loadAlarmLogs);
+            document.getElementById('logFilterStatus')?.addEventListener('change', loadAlarmLogs);
+            
+            // 规则类型变化
+            document.getElementById('ruleType')?.addEventListener('change', updateThresholdDisplay);
+            
+            // 监听服务器更新
+            if (window.electronAPI.onServersUpdate) {
+                window.electronAPI.onServersUpdate(() => {
+                    loadServers();
+                });
+            }
+            
+            // 监听告警触发
+            if (window.electronAPI.onAlarmTriggered) {
+                window.electronAPI.onAlarmTriggered(() => {
+                    loadAlarmLogs();
+                });
+            }
+        }
+        
+        // 工具函数
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
+        }
+        
+        function formatTime(isoString) {
+            if (!isoString) return '';
+            
+            const date = new Date(isoString);
+            const now = new Date();
+            const diff = now - date;
+            
+            if (diff < 60000) {
+                return '刚刚';
+            } else if (diff < 3600000) {
+                return Math.floor(diff / 60000) + ' 分钟前';
+            } else if (diff < 86400000) {
+                return Math.floor(diff / 3600000) + ' 小时前';
+            } else {
+                return date.toLocaleDateString('zh-CN') + ' ' + date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+            }
+        }
+        
+        // 点击模态框外部关闭
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    overlay.classList.remove('active');
+                }
+            });
+        });
         
         // 初始化
-        loadServerConfig();
-        loadClientConfig();
+        init();
     </script>
 </body>
 </html>
