@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
+const https = require('https');
 const WebSocket = require('ws');
 const si = require('systeminformation');
 const os = require('os');
@@ -214,6 +215,196 @@ app.get('/api/user/info', authMiddleware, (req, res) => {
     createdAt: user.createdAt,
     updatedAt: user.updatedAt
   });
+});
+
+// ==================== 音乐 API ====================
+
+// 发送 HTTPS 请求的辅助函数
+function httpsGet(url, headers = {}) {
+  return new Promise((resolve, reject) => {
+    const options = {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Referer': 'https://music.163.com/',
+        ...headers
+      }
+    };
+    
+    https.get(url, options, (res) => {
+      let data = '';
+      res.on('data', (chunk) => data += chunk);
+      res.on('end', () => {
+        try {
+          resolve(JSON.parse(data));
+        } catch (e) {
+          resolve(data);
+        }
+      });
+    }).on('error', reject);
+  });
+}
+
+// 音乐搜索
+app.get('/api/music/search', authMiddleware, async (req, res) => {
+  try {
+    const { keyword, limit = 20, offset = 0 } = req.query;
+    
+    if (!keyword) {
+      return res.status(400).json({ error: '搜索关键词不能为空' });
+    }
+    
+    const url = `https://music.163.com/api/search/get/web?s=${encodeURIComponent(keyword)}&type=1&offset=${offset}&limit=${limit}`;
+    const data = await httpsGet(url);
+    
+    if (data.result && data.result.songs) {
+      const songs = data.result.songs.map(song => ({
+        id: song.id,
+        name: song.name,
+        artist: song.artists?.map(a => a.name).join(' / ') || song.artists?.[0]?.name || '未知歌手',
+        album: song.album?.name || '未知专辑',
+        albumId: song.album?.id,
+        picUrl: song.album?.picUrl || song.album?.blurPicUrl,
+        duration: song.duration,
+        mvId: song.mvid || 0
+      }));
+      
+      res.json({
+        success: true,
+        songs,
+        total: data.result.songCount || 0
+      });
+    } else {
+      res.json({ success: true, songs: [], total: 0 });
+    }
+  } catch (error) {
+    console.error('音乐搜索失败:', error);
+    res.status(500).json({ error: '搜索失败，请稍后重试' });
+  }
+});
+
+// 获取歌曲播放地址
+app.get('/api/music/url', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.query;
+    
+    if (!id) {
+      return res.status(400).json({ error: '歌曲ID不能为空' });
+    }
+    
+    // 使用网易云音乐外链地址
+    const url = `https://music.163.com/song/media/outer/url?id=${id}.mp3`;
+    
+    res.json({
+      success: true,
+      url,
+      id
+    });
+  } catch (error) {
+    console.error('获取歌曲地址失败:', error);
+    res.status(500).json({ error: '获取歌曲地址失败' });
+  }
+});
+
+// 获取歌词
+app.get('/api/music/lyric', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.query;
+    
+    if (!id) {
+      return res.status(400).json({ error: '歌曲ID不能为空' });
+    }
+    
+    const url = `https://music.163.com/api/song/lyric?id=${id}&lv=1&kv=1&tv=-1`;
+    const data = await httpsGet(url);
+    
+    res.json({
+      success: true,
+      lyric: data.lrc?.lyric || '',
+      tlyric: data.tlyric?.lyric || '', // 翻译歌词
+      version: data.lrc?.version || 0
+    });
+  } catch (error) {
+    console.error('获取歌词失败:', error);
+    res.status(500).json({ error: '获取歌词失败' });
+  }
+});
+
+// 获取歌曲详情
+app.get('/api/music/detail', authMiddleware, async (req, res) => {
+  try {
+    const { ids } = req.query;
+    
+    if (!ids) {
+      return res.status(400).json({ error: '歌曲ID不能为空' });
+    }
+    
+    const url = `https://music.163.com/api/song/detail?ids=[${ids}]`;
+    const data = await httpsGet(url);
+    
+    if (data.songs && data.songs.length > 0) {
+      const songs = data.songs.map(song => ({
+        id: song.id,
+        name: song.name,
+        artist: song.artists?.map(a => a.name).join(' / ') || '未知歌手',
+        album: song.album?.name || '未知专辑',
+        albumId: song.album?.id,
+        picUrl: song.album?.picUrl,
+        duration: song.duration
+      }));
+      
+      res.json({ success: true, songs });
+    } else {
+      res.json({ success: true, songs: [] });
+    }
+  } catch (error) {
+    console.error('获取歌曲详情失败:', error);
+    res.status(500).json({ error: '获取歌曲详情失败' });
+  }
+});
+
+// 热门歌单推荐
+app.get('/api/music/playlist/hot', authMiddleware, async (req, res) => {
+  try {
+    const { limit = 10 } = req.query;
+    
+    const url = `https://music.163.com/api/playlist/hot?limit=${limit}`;
+    const data = await httpsGet(url);
+    
+    if (data.tags) {
+      res.json({ success: true, tags: data.tags });
+    } else {
+      res.json({ success: true, tags: [] });
+    }
+  } catch (error) {
+    console.error('获取热门歌单失败:', error);
+    res.status(500).json({ error: '获取热门歌单失败' });
+  }
+});
+
+// 推荐新音乐
+app.get('/api/music/new', authMiddleware, async (req, res) => {
+  try {
+    const url = 'https://music.163.com/api/personalized/newsong?type=R_M4_999';
+    const data = await httpsGet(url);
+    
+    if (data.result) {
+      const songs = data.result.map(item => ({
+        id: item.id,
+        name: item.name,
+        artist: item.song?.artists?.map(a => a.name).join(' / ') || item.artists?.map(a => a.name).join(' / ') || '未知歌手',
+        album: item.song?.album?.name || item.album?.name || '未知专辑',
+        picUrl: item.picUrl || item.song?.album?.picUrl,
+        duration: item.song?.duration || item.duration
+      }));
+      
+      res.json({ success: true, songs });
+    } else {
+      res.json({ success: true, songs: [] });
+    }
+  } catch (error) {
+    console.error('获取新音乐失败:', error);
+    res.status(500).json({ error: '获取新音乐失败' });
+  }
 });
 
 // 登出接口

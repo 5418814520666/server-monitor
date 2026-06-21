@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音乐播放器 - 服务器监控系统</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/music.css">
+</head>
+<body>
+    <!-- 导航栏 -->
+    <div class="container">
+        <header class="header">
+            <div class="header-left">
+                <h1>🖥️ 服务器监控系统</h1>
+                <nav class="nav">
+                    <a href="index.html" class="nav-link">📊 监控面板</a>
+                    <a href="ssh.html" class="nav-link">💻 SSH 终端</a>
+                    <a href="music.html" class="nav-link active">🎵 音乐播放</a>
+                </nav>
+            </div>
+            <div class="header-right">
+                <div class="user-info" id="userInfo">
+                    <div class="user-dropdown">
+                        <button class="user-dropdown-btn" id="userDropdownBtn">
+                            <span class="user-icon">👤</span>
+                            <span class="username" id="username">用户</span>
+                            <span class="dropdown-arrow">▼</span>
+                        </button>
+                        <div class="user-dropdown-menu" id="userDropdownMenu">
+                            <a href="change-password.html" class="dropdown-item" id="changePasswordLink">
+                                🔐 修改密码
+                            </a>
+                            <button class="dropdown-item logout-btn" id="logoutBtn">
+                                🚪 退出登录
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+    <!-- 主内容区 -->
+    <div class="music-container">
+        <!-- 左侧：播放器和歌词 -->
+        <div class="music-left">
+            <!-- 播放器卡片 -->
+            <div class="player-card">
+                <div class="player-cover">
+                    <img id="albumCover" src="" alt="专辑封面" class="cover-img">
+                    <div class="cover-overlay">
+                        <div class="play-btn-large" id="playBtnLarge">
+                            <span id="playIconLarge">▶️</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="player-info">
+                    <h2 class="song-title" id="songTitle">未播放</h2>
+                    <p class="song-artist" id="songArtist">选择一首歌曲开始播放</p>
+                </div>
+                
+                <!-- 进度条 -->
+                <div class="progress-container">
+                    <span class="time current-time" id="currentTime">0:00</span>
+                    <div class="progress-bar" id="progressBar">
+                        <div class="progress-fill" id="progressFill"></div>
+                        <div class="progress-thumb" id="progressThumb"></div>
+                    </div>
+                    <span class="time total-time" id="totalTime">0:00</span>
+                </div>
+                
+                <!-- 控制按钮 -->
+                <div class="player-controls">
+                    <button class="control-btn" id="prevBtn" title="上一首">⏮️</button>
+                    <button class="control-btn play-btn" id="playBtn" title="播放/暂停">
+                        <span id="playIcon">▶️</span>
+                    </button>
+                    <button class="control-btn" id="nextBtn" title="下一首">⏭️</button>
+                    
+                    <div class="volume-control">
+                        <button class="control-btn volume-btn" id="volumeBtn" title="音量">🔊</button>
+                        <div class="volume-slider-container">
+                            <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="80">
+                        </div>
+                    </div>
+                    
+                    <button class="control-btn" id="modeBtn" title="播放模式">🔁</button>
+                </div>
+            </div>
+            
+            <!-- 歌词卡片 -->
+            <div class="lyric-card">
+                <div class="lyric-header">
+                    <h3>歌词</h3>
+                </div>
+                <div class="lyric-content" id="lyricContent">
+                    <div class="lyric-placeholder">
+                        <span>🎵</span>
+                        <p>暂无歌词</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 右侧：搜索和播放列表 -->
+        <div class="music-right">
+            <!-- 搜索框 -->
+            <div class="search-card">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="搜索歌曲、歌手..." class="search-input">
+                    <button class="search-btn" id="searchBtn">🔍</button>
+                </div>
+                <div class="search-tabs">
+                    <button class="tab-btn active" data-tab="search">搜索结果</button>
+                    <button class="tab-btn" data-tab="playlist">播放列表</button>
+                    <button class="tab-btn" data-tab="recommend">推荐音乐</button>
+                </div>
+            </div>
+            
+            <!-- 歌曲列表 -->
+            <div class="song-list-card">
+                <div class="song-list" id="songList">
+                    <div class="song-list-placeholder">
+                        <span>🎶</span>
+                        <p>搜索歌曲或查看推荐</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 音频元素 -->
+    <audio id="audioPlayer" preload="metadata"></audio>
+
+    <script src="js/music.js"></script>
+</body>
+</html>
