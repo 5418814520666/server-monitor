@@ -77,6 +77,21 @@ electron/*.blockmap
 electron/latest*.yml
 electron/latest*.json
 
+# Desktop client
+desktop/dist/
+desktop/release/
+desktop/out/
+desktop/*.exe
+desktop/*.msi
+desktop/*.dmg
+desktop/*.deb
+desktop/*.rpm
+desktop/*.AppImage
+desktop/*.blockmap
+desktop/latest*.yml
+desktop/latest*.json
+desktop/node_modules/
+
 # Electron icons (可选，如果不想提交图标)
 # electron/assets/icon.ico
 # electron/assets/icon.png
