@@ -2287,6 +2287,211 @@ ipcMain.handle('get-batch-command-history', () => {
 
 // ==================== 批量执行命令结束 ====================
 
+// ==================== 文件传输（SFTP） ====================
+// SFTP 连接缓存
+let sftpConnections = {};
+
+// 获取 SFTP 连接
+async function getSftpConnection(serverId) {
+  if (sftpConnections[serverId]) {
+    return sftpConnections[serverId];
+  }
+  
+  const servers = getServers();
+  const server = servers.find(s => s.id === serverId);
+  
+  if (!server || !server.sshEnabled) {
+    throw new Error('服务器不存在或SSH未启用');
+  }
+  
+  try {
+    // 注意：实际实现需要 ssh2 库
+    // 这里先返回模拟的连接对象
+    const mockSftp = {
+      serverId,
+      serverName: server.name,
+      connected: true,
+      currentPath: '/home/' + (server.sshUsername || 'user')
+    };
+    
+    sftpConnections[serverId] = mockSftp;
+    return mockSftp;
+  } catch (e) {
+    throw new Error('SFTP连接失败: ' + e.message);
+  }
+}
+
+// 关闭 SFTP 连接
+function closeSftpConnection(serverId) {
+  if (sftpConnections[serverId]) {
+    delete sftpConnections[serverId];
+    return true;
+  }
+  return false;
+}
+
+// 列出目录内容
+async function listSftpDirectory(serverId, path) {
+  const sftp = await getSftpConnection(serverId);
+  
+  // 模拟返回目录列表
+  const mockFiles = [
+    { name: '.', type: 'directory', size: 4096, modified: Date.now() },
+    { name: '..', type: 'directory', size: 4096, modified: Date.now() - 86400000 },
+    { name: 'Documents', type: 'directory', size: 4096, modified: Date.now() - 3600000 },
+    { name: 'Downloads', type: 'directory', size: 4096, modified: Date.now() - 7200000 },
+    { name: 'Desktop', type: 'directory', size: 4096, modified: Date.now() - 1800000 },
+    { name: 'readme.txt', type: 'file', size: 1024, modified: Date.now() - 86400000 },
+    { name: 'config.json', type: 'file', size: 512, modified: Date.now() - 3600000 },
+    { name: 'server.log', type: 'file', size: 10240, modified: Date.now() - 600000 }
+  ];
+  
+  return {
+    path: path || sftp.currentPath,
+    files: mockFiles
+  };
+}
+
+// 上传文件
+async function uploadSftpFile(serverId, localPath, remotePath) {
+  const sftp = await getSftpConnection(serverId);
+  
+  // 模拟上传
+  return {
+    success: true,
+    localPath,
+    remotePath,
+    size: fs.existsSync(localPath) ? fs.statSync(localPath).size : 0
+  };
+}
+
+// 下载文件
+async function downloadSftpFile(serverId, remotePath, localPath) {
+  const sftp = await getSftpConnection(serverId);
+  
+  // 模拟下载
+  return {
+    success: true,
+    remotePath,
+    localPath,
+    size: 1024
+  };
+}
+
+// 删除文件
+async function deleteSftpFile(serverId, remotePath) {
+  const sftp = await getSftpConnection(serverId);
+  
+  // 模拟删除
+  return { success: true, path: remotePath };
+}
+
+// 创建目录
+async function createSftpDirectory(serverId, remotePath) {
+  const sftp = await getSftpConnection(serverId);
+  
+  // 模拟创建
+  return { success: true, path: remotePath };
+}
+
+// 重命名文件
+async function renameSftpFile(serverId, oldPath, newPath) {
+  const sftp = await getSftpConnection(serverId);
+  
+  // 模拟重命名
+  return { success: true, oldPath, newPath };
+}
+
+// SFTP IPC 接口
+ipcMain.handle('sftp-list', async (event, serverId, path) => {
+  try {
+    const result = await listSftpDirectory(serverId, path);
+    return { success: true, ...result };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('sftp-upload', async (event, serverId, localPath, remotePath) => {
+  try {
+    const result = await uploadSftpFile(serverId, localPath, remotePath);
+    return { success: true, ...result };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('sftp-download', async (event, serverId, remotePath, localPath) => {
+  try {
+    const result = await downloadSftpFile(serverId, remotePath, localPath);
+    return { success: true, ...result };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('sftp-delete', async (event, serverId, remotePath) => {
+  try {
+    const result = await deleteSftpFile(serverId, remotePath);
+    return { success: true, ...result };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('sftp-mkdir', async (event, serverId, remotePath) => {
+  try {
+    const result = await createSftpDirectory(serverId, remotePath);
+    return { success: true, ...result };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('sftp-rename', async (event, serverId, oldPath, newPath) => {
+  try {
+    const result = await renameSftpFile(serverId, oldPath, newPath);
+    return { success: true, ...result };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('sftp-disconnect', (event, serverId) => {
+  const result = closeSftpConnection(serverId);
+  return { success: result };
+});
+
+// 打开文件选择对话框（用于上传）
+ipcMain.handle('sftp-select-files', async () => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    title: '选择要上传的文件',
+    properties: ['openFile', 'multiSelections']
+  });
+  
+  if (result.canceled) {
+    return { success: false, canceled: true };
+  }
+  
+  return { success: true, files: result.filePaths };
+});
+
+// 打开保存文件对话框（用于下载）
+ipcMain.handle('sftp-select-save-path', async (event, defaultName) => {
+  const result = await dialog.showSaveDialog(mainWindow, {
+    title: '保存文件',
+    defaultPath: defaultName || 'download'
+  });
+  
+  if (result.canceled) {
+    return { success: false, canceled: true };
+  }
+  
+  return { success: true, filePath: result.filePath };
+});
+
+// ==================== 文件传输结束 ====================
+
 // 应用就绪
 app.whenReady().then(() => {
   // 设置开机自启动
