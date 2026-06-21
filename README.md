@@ -11,6 +11,7 @@
 - **网络监控**：实时上传/下载速度，总流量统计
 - **历史数据**：自动记录最近60个数据点，展示趋势图表
 - **系统信息**：主机名、操作系统、内核版本、运行时间等
+- **SSH 终端**：内置 Web SSH 终端，支持密码和私钥认证
 - **响应式设计**：支持桌面端和移动端访问
 - **现代化 UI**：深色主题，玻璃拟态设计风格
 
@@ -20,10 +21,12 @@
 - Node.js + Express
 - WebSocket (ws 库)
 - systeminformation (系统信息采集)
+- ssh2 (SSH 客户端)
 
 ### 前端
 - 原生 HTML/CSS/JavaScript
 - Chart.js (图表可视化)
+- xterm.js (终端组件)
 - WebSocket 实时通信
 
 ## 📦 安装与使用
@@ -83,13 +86,17 @@ npm run dev
 server-monitor/
 ├── backend/              # 后端服务
 │   ├── server.js        # 主服务器文件
+│   ├── ssh-handler.js   # SSH 终端处理器
 │   └── package.json     # 后端依赖配置
 ├── frontend/            # 前端页面
-│   ├── index.html       # 主页面
+│   ├── index.html       # 监控面板
+│   ├── ssh.html         # SSH 终端页面
 │   ├── css/
-│   │   └── style.css    # 样式文件
+│   │   ├── style.css    # 主样式文件
+│   │   └── ssh.css      # SSH 终端样式
 │   └── js/
-│       └── app.js       # 前端逻辑
+│       ├── app.js       # 监控逻辑
+│       └── ssh.js       # SSH 终端逻辑
 ├── deploy/              # 部署配置文件
 │   ├── server-monitor.service  # systemd 服务配置
 │   └── nginx.conf       # Nginx 反向代理配置
@@ -112,11 +119,24 @@ server-monitor/
 
 ### WebSocket
 
+#### 监控 WebSocket
 连接地址：`ws://<host>:<port>`
 
 消息类型：
 - `info`：实时系统信息
 - `history`：历史数据
+
+#### SSH 终端 WebSocket
+连接地址：`ws://<host>:<port>/ssh`
+
+消息类型：
+- `connect`：建立 SSH 连接
+- `input`：终端输入
+- `resize`：调整终端大小
+- `disconnect`：断开 SSH 连接
+- `status`：连接状态
+- `output`：终端输出
+- `error`：错误信息
 
 ## ⚙️ 配置
 
@@ -244,6 +264,8 @@ deploy.sh                    # 一键部署脚本
 2. 生产环境建议添加身份验证
 3. CPU 温度功能依赖系统支持，部分系统可能无法获取
 4. 建议在服务器上本地部署，减少网络延迟
+5. SSH 终端功能存在安全风险，生产环境请谨慎使用
+6. SSH 凭据通过 WebSocket 传输，建议使用 HTTPS 加密
 
 ## 🤝 贡献
 

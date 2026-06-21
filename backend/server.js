@@ -4,10 +4,13 @@ const http = require('http');
 const WebSocket = require('ws');
 const si = require('systeminformation');
 const os = require('os');
+const url = require('url');
+const { handleSSHConnection } = require('./ssh-handler');
 
 const app = express();
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocket.Server({ noServer: true });
+const sshWss = new WebSocket.Server({ noServer: true });
 
 const PORT = process.env.PORT || 3000;
 
@@ -125,9 +128,9 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// WebSocket 连接处理
+// 监控 WebSocket 连接处理
 wss.on('connection', (ws) => {
-  console.log('新的WebSocket连接');
+  console.log('新的监控WebSocket连接');
   
   // 发送初始数据
   getSystemInfo().then(info => {
@@ -138,12 +141,33 @@ wss.on('connection', (ws) => {
   });
 
   ws.on('close', () => {
-    console.log('WebSocket连接断开');
+    console.log('监控WebSocket连接断开');
   });
 
   ws.on('error', (error) => {
-    console.error('WebSocket错误:', error);
+    console.error('监控WebSocket错误:', error);
   });
+});
+
+// SSH WebSocket 连接处理
+sshWss.on('connection', (ws) => {
+  console.log('新的SSH WebSocket连接');
+  handleSSHConnection(ws);
+});
+
+// 处理 WebSocket 升级请求
+server.on('upgrade', (request, socket, head) => {
+  const pathname = url.parse(request.url).pathname;
+
+  if (pathname === '/ssh') {
+    sshWss.handleUpgrade(request, socket, head, (ws) => {
+      sshWss.emit('connection', ws, request);
+    });
+  } else {
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      wss.emit('connection', ws, request);
+    });
+  }
 });
 
 // 定时采集数据并广播
