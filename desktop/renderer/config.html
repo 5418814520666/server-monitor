@@ -1040,6 +1040,10 @@
                     <span class="icon">📋</span>
                     <span>告警日志</span>
                 </div>
+                <div class="nav-item" data-page="history">
+                    <span class="icon">📊</span>
+                    <span>历史记录</span>
+                </div>
                 <div class="nav-item" data-page="settings">
                     <span class="icon">⚙️</span>
                     <span>客户端设置</span>
@@ -1158,6 +1162,70 @@
                     <div class="card-body">
                         <div class="log-list" id="fullLogList">
                             <!-- 告警日志将通过 JS 动态生成 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 历史记录页面 -->
+            <div class="page" id="page-history">
+                <div class="page-header">
+                    <h1 class="page-title">历史记录</h1>
+                    <p class="page-desc">查看服务器监控历史数据</p>
+                </div>
+                
+                <div class="toolbar">
+                    <div style="display: flex; gap: 10px;">
+                        <select id="historyServerSelect" class="btn btn-secondary btn-sm" style="padding: 6px 12px;">
+                            <option value="">选择服务器</option>
+                        </select>
+                        <select id="historyTimeRange" class="btn btn-secondary btn-sm" style="padding: 6px 12px;">
+                            <option value="1h">最近1小时</option>
+                            <option value="6h">最近6小时</option>
+                            <option value="24h" selected>最近24小时</option>
+                            <option value="7d">最近7天</option>
+                            <option value="30d">最近30天</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-secondary btn-sm" id="refreshHistoryBtn">
+                            🔄 刷新
+                        </button>
+                        <button class="btn btn-secondary btn-sm" id="exportHistoryBtn">
+                            📥 导出
+                        </button>
+                        <button class="btn btn-danger btn-sm" id="clearHistoryBtn">
+                            🗑️ 清空
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="card" style="margin-bottom: 20px;">
+                    <div class="card-header">
+                        <div class="card-title">📊 数据概览</div>
+                    </div>
+                    <div class="card-body">
+                        <div id="historySummary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                            <div class="empty-state" style="grid-column: 1 / -1;">
+                                <div class="icon">📊</div>
+                                <div class="title">暂无历史数据</div>
+                                <div class="desc">选择服务器查看历史监控数据</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">📈 数据记录</div>
+                    </div>
+                    <div class="card-body">
+                        <div class="log-list" id="historyList" style="max-height: 500px;">
+                            <div class="empty-state">
+                                <div class="icon">📋</div>
+                                <div class="title">暂无数据记录</div>
+                                <div class="desc">选择服务器后将显示历史数据</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1543,6 +1611,9 @@
             if (page === 'logs') {
                 loadAlarmLogs();
             }
+            if (page === 'history') {
+                updateHistoryServerSelect();
+            }
         }
         
         // 设置标签页
@@ -1575,6 +1646,7 @@
                     servers = result.servers || [];
                     renderServerList();
                     updateServerSelect();
+                    updateHistoryServerSelect();
                 }
             } catch (e) {
                 console.error('加载服务器列表失败:', e);
@@ -2075,6 +2147,269 @@
             }
         }
         
+        // 加载历史记录
+        let currentHistoryServer = null;
+        let historyData = [];
+        
+        async function loadHistory() {
+            if (!isDesktop || !window.electronAPI.getHistory) return;
+            
+            const serverId = document.getElementById('historyServerSelect')?.value;
+            if (!serverId) {
+                renderHistoryEmpty('请选择服务器');
+                return;
+            }
+            
+            currentHistoryServer = serverId;
+            
+            try {
+                const timeRange = document.getElementById('historyTimeRange')?.value || '24h';
+                const options = {};
+                
+                // 计算时间范围
+                const now = Date.now();
+                let startTime = now;
+                
+                switch (timeRange) {
+                    case '1h':
+                        startTime = now - 60 * 60 * 1000;
+                        break;
+                    case '6h':
+                        startTime = now - 6 * 60 * 60 * 1000;
+                        break;
+                    case '24h':
+                        startTime = now - 24 * 60 * 60 * 1000;
+                        break;
+                    case '7d':
+                        startTime = now - 7 * 24 * 60 * 60 * 1000;
+                        break;
+                    case '30d':
+                        startTime = now - 30 * 24 * 60 * 60 * 1000;
+                        break;
+                }
+                
+                options.startTime = new Date(startTime).toISOString();
+                
+                const result = await window.electronAPI.getHistory(serverId, options);
+                if (result.success) {
+                    historyData = result.history || [];
+                    renderHistorySummary();
+                    renderHistoryList();
+                }
+            } catch (e) {
+                console.error('加载历史记录失败:', e);
+                renderHistoryEmpty('加载失败: ' + e.message);
+            }
+        }
+        
+        // 渲染历史记录概览
+        function renderHistorySummary() {
+            const container = document.getElementById('historySummary');
+            if (!container) return;
+            
+            if (historyData.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1 / -1;">
+                        <div class="icon">📊</div>
+                        <div class="title">暂无历史数据</div>
+                        <div class="desc">该服务器暂无监控历史数据</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            // 计算统计数据
+            const cpuValues = historyData.map(p => p.cpu || 0);
+            const memoryValues = historyData.map(p => p.memory || 0);
+            const diskValues = historyData.map(p => p.disk || 0);
+            
+            const avgCpu = cpuValues.reduce((a, b) => a + b, 0) / cpuValues.length;
+            const avgMemory = memoryValues.reduce((a, b) => a + b, 0) / memoryValues.length;
+            const avgDisk = diskValues.reduce((a, b) => a + b, 0) / diskValues.length;
+            
+            const maxCpu = Math.max(...cpuValues);
+            const maxMemory = Math.max(...memoryValues);
+            const maxDisk = Math.max(...diskValues);
+            
+            const firstPoint = historyData[0];
+            const lastPoint = historyData[historyData.length - 1];
+            
+            container.innerHTML = `
+                <div style="background: rgba(255,255,255,0.05); border-radius: 12px; padding: 16px;">
+                    <div style="font-size: 12px; color: rgba(255,255,255,0.5); margin-bottom: 8px;">数据点数</div>
+                    <div style="font-size: 24px; font-weight: 700; color: #00d4ff;">${historyData.length}</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.05); border-radius: 12px; padding: 16px;">
+                    <div style="font-size: 12px; color: rgba(255,255,255,0.5); margin-bottom: 8px;">平均 CPU</div>
+                    <div style="font-size: 24px; font-weight: 700; color: #3b82f6;">${avgCpu.toFixed(1)}%</div>
+                    <div style="font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 4px;">峰值: ${maxCpu.toFixed(1)}%</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.05); border-radius: 12px; padding: 16px;">
+                    <div style="font-size: 12px; color: rgba(255,255,255,0.5); margin-bottom: 8px;">平均内存</div>
+                    <div style="font-size: 24px; font-weight: 700; color: #10b981;">${avgMemory.toFixed(1)}%</div>
+                    <div style="font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 4px;">峰值: ${maxMemory.toFixed(1)}%</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.05); border-radius: 12px; padding: 16px;">
+                    <div style="font-size: 12px; color: rgba(255,255,255,0.5); margin-bottom: 8px;">平均磁盘</div>
+                    <div style="font-size: 24px; font-weight: 700; color: #f59e0b;">${avgDisk.toFixed(1)}%</div>
+                    <div style="font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 4px;">峰值: ${maxDisk.toFixed(1)}%</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.05); border-radius: 12px; padding: 16px;">
+                    <div style="font-size: 12px; color: rgba(255,255,255,0.5); margin-bottom: 8px;">最早记录</div>
+                    <div style="font-size: 14px; font-weight: 600;">${formatTime(firstPoint.timestamp)}</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.05); border-radius: 12px; padding: 16px;">
+                    <div style="font-size: 12px; color: rgba(255,255,255,0.5); margin-bottom: 8px;">最新记录</div>
+                    <div style="font-size: 14px; font-weight: 600;">${formatTime(lastPoint.timestamp)}</div>
+                </div>
+            `;
+        }
+        
+        // 渲染历史记录列表
+        function renderHistoryList() {
+            const container = document.getElementById('historyList');
+            if (!container) return;
+            
+            if (historyData.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">📋</div>
+                        <div class="title">暂无数据记录</div>
+                        <div class="desc">该服务器暂无监控历史数据</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            // 只显示最近的100条
+            const displayData = historyData.slice(-100).reverse();
+            
+            let html = '';
+            
+            displayData.forEach(point => {
+                const cpuColor = point.cpu > 80 ? '#ef4444' : point.cpu > 60 ? '#f59e0b' : '#10b981';
+                const memoryColor = point.memory > 80 ? '#ef4444' : point.memory > 60 ? '#f59e0b' : '#10b981';
+                const diskColor = point.disk > 80 ? '#ef4444' : point.disk > 60 ? '#f59e0b' : '#10b981';
+                
+                html += `
+                    <div class="log-item" style="border-left-color: #7b2cbf; background: rgba(123, 44, 191, 0.05);">
+                        <div class="log-header">
+                            <span class="log-server">${formatTime(point.timestamp)}</span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 8px;">
+                            <div>
+                                <div style="font-size: 11px; color: rgba(255,255,255,0.5);">CPU</div>
+                                <div style="font-size: 14px; font-weight: 600; color: ${cpuColor};">${point.cpu?.toFixed(1) || 0}%</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 11px; color: rgba(255,255,255,0.5);">内存</div>
+                                <div style="font-size: 14px; font-weight: 600; color: ${memoryColor};">${point.memory?.toFixed(1) || 0}%</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 11px; color: rgba(255,255,255,0.5);">磁盘</div>
+                                <div style="font-size: 14px; font-weight: 600; color: ${diskColor};">${point.disk?.toFixed(1) || 0}%</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            if (historyData.length > 100) {
+                html += `
+                    <div style="text-align: center; padding: 12px; color: rgba(255,255,255,0.4); font-size: 12px;">
+                        仅显示最近 100 条记录，共 ${historyData.length} 条
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        // 渲染空状态
+        function renderHistoryEmpty(message) {
+            const summaryContainer = document.getElementById('historySummary');
+            const listContainer = document.getElementById('historyList');
+            
+            if (summaryContainer) {
+                summaryContainer.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1 / -1;">
+                        <div class="icon">📊</div>
+                        <div class="title">暂无历史数据</div>
+                        <div class="desc">${message}</div>
+                    </div>
+                `;
+            }
+            
+            if (listContainer) {
+                listContainer.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">📋</div>
+                        <div class="title">暂无数据记录</div>
+                        <div class="desc">${message}</div>
+                    </div>
+                `;
+            }
+        }
+        
+        // 更新历史记录服务器选择
+        function updateHistoryServerSelect() {
+            const select = document.getElementById('historyServerSelect');
+            if (!select) return;
+            
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">选择服务器</option>';
+            
+            servers.forEach(server => {
+                select.innerHTML += `<option value="${server.id}">${escapeHtml(server.name)}</option>`;
+            });
+            
+            if (currentValue) {
+                select.value = currentValue;
+            }
+        }
+        
+        // 导出历史记录
+        async function exportHistory() {
+            if (!isDesktop || !window.electronAPI.exportHistory) return;
+            
+            const serverId = document.getElementById('historyServerSelect')?.value;
+            if (!serverId) {
+                alert('请先选择服务器');
+                return;
+            }
+            
+            try {
+                // 默认导出为 JSON 格式
+                await window.electronAPI.exportHistory(serverId, 'json');
+            } catch (e) {
+                console.error('导出历史记录失败:', e);
+                alert('导出失败: ' + e.message);
+            }
+        }
+        
+        // 清空历史记录
+        async function clearHistory() {
+            if (!isDesktop || !window.electronAPI.clearServerHistory) return;
+            
+            const serverId = document.getElementById('historyServerSelect')?.value;
+            if (!serverId) {
+                alert('请先选择服务器');
+                return;
+            }
+            
+            if (!confirm('确定要清空该服务器的所有历史记录吗？此操作不可恢复。')) return;
+            
+            try {
+                const result = await window.electronAPI.clearServerHistory(serverId);
+                if (result.success) {
+                    await loadHistory();
+                }
+            } catch (e) {
+                console.error('清空历史记录失败:', e);
+                alert('清空失败: ' + e.message);
+            }
+        }
+        
         // 加载客户端配置
         async function loadClientConfig() {
             if (!isDesktop || !window.electronAPI.getConfig) return;
@@ -2164,6 +2499,13 @@
             
             // 规则类型变化
             document.getElementById('ruleType')?.addEventListener('change', updateThresholdDisplay);
+            
+            // 历史记录相关事件
+            document.getElementById('historyServerSelect')?.addEventListener('change', loadHistory);
+            document.getElementById('historyTimeRange')?.addEventListener('change', loadHistory);
+            document.getElementById('refreshHistoryBtn')?.addEventListener('click', loadHistory);
+            document.getElementById('exportHistoryBtn')?.addEventListener('click', exportHistory);
+            document.getElementById('clearHistoryBtn')?.addEventListener('click', clearHistory);
             
             // 主题切换
             document.getElementById('themeSelect')?.addEventListener('change', async (e) => {

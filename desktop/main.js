@@ -114,6 +114,13 @@ function addServer(server) {
     group: server.group || '默认分组',
     username: server.username || '',
     password: server.password || '', // 注意：生产环境应该加密存储
+    // SSH 配置
+    sshEnabled: server.sshEnabled || false,
+    sshHost: server.sshHost || '',
+    sshPort: server.sshPort || 22,
+    sshUsername: server.sshUsername || '',
+    sshPassword: server.sshPassword || '',
+    sshKey: server.sshKey || '', // SSH 私钥路径
     status: 'unknown',
     lastCheck: null,
     createdAt: new Date().toISOString(),
@@ -616,6 +623,181 @@ function stopAlarmCheck() {
 }
 
 // ==================== 告警系统结束 ====================
+
+// ==================== 本地历史记录 ====================
+// 历史记录存储路径
+const historyPath = path.join(app.getPath('userData'), 'history.json');
+// 历史记录数据
+let historyData = {};
+// 最大保留天数
+const MAX_HISTORY_DAYS = 30;
+// 每个服务器最多保留数据点
+const MAX_POINTS_PER_SERVER = 10000;
+
+// 读取历史记录
+function readHistory() {
+  try {
+    if (fs.existsSync(historyPath)) {
+      const data = fs.readFileSync(historyPath, 'utf-8');
+      historyData = JSON.parse(data);
+      return historyData;
+    }
+  } catch (e) {
+    console.error('读取历史记录失败:', e);
+  }
+  historyData = {};
+  return historyData;
+}
+
+// 保存历史记录
+function saveHistory() {
+  try {
+    const dir = path.dirname(historyPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(historyPath, JSON.stringify(historyData, null, 2), 'utf-8');
+    return true;
+  } catch (e) {
+    console.error('保存历史记录失败:', e);
+    return false;
+  }
+}
+
+// 添加历史记录数据点
+function addHistoryPoint(serverId, data) {
+  if (!historyData[serverId]) {
+    historyData[serverId] = [];
+  }
+  
+  const point = {
+    timestamp: new Date().toISOString(),
+    cpu: data.cpu || 0,
+    memory: data.memory || 0,
+    disk: data.disk || 0,
+    network: data.network || { up: 0, down: 0 }
+  };
+  
+  historyData[serverId].push(point);
+  
+  // 限制数据点数量
+  if (historyData[serverId].length > MAX_POINTS_PER_SERVER) {
+    historyData[serverId] = historyData[serverId].slice(-MAX_POINTS_PER_SERVER);
+  }
+  
+  // 清理过期数据
+  cleanupOldHistory();
+  
+  // 定期保存（每10个点保存一次）
+  if (historyData[serverId].length % 10 === 0) {
+    saveHistory();
+  }
+  
+  return point;
+}
+
+// 获取历史记录
+function getHistory(serverId, options = {}) {
+  const history = historyData[serverId] || [];
+  
+  let result = [...history];
+  
+  // 按时间范围过滤
+  if (options.startTime) {
+    const start = new Date(options.startTime).getTime();
+    result = result.filter(p => new Date(p.timestamp).getTime() >= start);
+  }
+  
+  if (options.endTime) {
+    const end = new Date(options.endTime).getTime();
+    result = result.filter(p => new Date(p.timestamp).getTime() <= end);
+  }
+  
+  // 限制数量
+  if (options.limit) {
+    result = result.slice(-options.limit);
+  }
+  
+  return result;
+}
+
+// 获取所有服务器的历史记录概览
+function getHistorySummary() {
+  const summary = {};
+  
+  Object.keys(historyData).forEach(serverId => {
+    const history = historyData[serverId];
+    if (history.length > 0) {
+      summary[serverId] = {
+        count: history.length,
+        firstPoint: history[0].timestamp,
+        lastPoint: history[history.length - 1].timestamp
+      };
+    }
+  });
+  
+  return summary;
+}
+
+// 清理过期的历史记录
+function cleanupOldHistory() {
+  const cutoffTime = Date.now() - MAX_HISTORY_DAYS * 24 * 60 * 60 * 1000;
+  
+  Object.keys(historyData).forEach(serverId => {
+    historyData[serverId] = historyData[serverId].filter(
+      p => new Date(p.timestamp).getTime() >= cutoffTime
+    );
+    
+    // 如果清理后为空，删除该服务器的记录
+    if (historyData[serverId].length === 0) {
+      delete historyData[serverId];
+    }
+  });
+}
+
+// 清空指定服务器的历史记录
+function clearServerHistory(serverId) {
+  if (historyData[serverId]) {
+    delete historyData[serverId];
+    saveHistory();
+    return true;
+  }
+  return false;
+}
+
+// 清空所有历史记录
+function clearAllHistory() {
+  historyData = {};
+  saveHistory();
+  return true;
+}
+
+// 导出历史记录
+function exportHistory(serverId, format = 'json') {
+  const history = getHistory(serverId);
+  
+  if (format === 'json') {
+    return JSON.stringify(history, null, 2);
+  } else if (format === 'csv') {
+    const headers = ['timestamp', 'cpu', 'memory', 'disk', 'network_up', 'network_down'];
+    const rows = history.map(p => [
+      p.timestamp,
+      p.cpu,
+      p.memory,
+      p.disk,
+      p.network?.up || 0,
+      p.network?.down || 0
+    ].join(','));
+    return [headers.join(','), ...rows].join('\n');
+  }
+  
+  return '';
+}
+
+// 初始化历史记录
+readHistory();
+
+// ==================== 本地历史记录结束 ====================
 
 // 创建托盘图标（根据状态）
 function createTrayIcon(status) {
@@ -1495,6 +1677,43 @@ ipcMain.handle('connect-server', (event, serverId) => {
   return { success: true, server };
 });
 
+// 连接到 SSH 终端
+ipcMain.handle('connect-ssh', (event, serverId) => {
+  const servers = getServers();
+  const server = servers.find(s => s.id === serverId);
+  
+  if (!server) {
+    return { success: false, error: '服务器不存在' };
+  }
+  
+  if (!server.sshEnabled) {
+    return { success: false, error: '该服务器未启用SSH' };
+  }
+  
+  currentServerId = serverId;
+  
+  if (mainWindow && server.url) {
+    // 构建 SSH 页面 URL，带上 SSH 配置参数
+    const sshUrl = new URL(server.url.replace(/\/+$/, '') + '/ssh.html');
+    
+    // 如果有 SSH 配置，通过 URL 参数传递（前端会读取）
+    if (server.sshHost) sshUrl.searchParams.set('host', server.sshHost);
+    if (server.sshPort) sshUrl.searchParams.set('port', server.sshPort);
+    if (server.sshUsername) sshUrl.searchParams.set('username', server.sshUsername);
+    if (server.sshPassword) sshUrl.searchParams.set('password', server.sshPassword);
+    
+    mainWindow.loadURL(sshUrl.toString()).catch((error) => {
+      console.error('加载SSH页面失败:', error);
+      updateServerStatus('offline');
+    });
+    
+    // 检测服务器状态
+    checkServerStatus(serverId);
+  }
+  
+  return { success: true, server };
+});
+
 // 发送服务器列表更新到渲染进程
 function sendServersUpdate() {
   if (mainWindow && !mainWindow.isDestroyed()) {
@@ -1599,6 +1818,72 @@ ipcMain.handle('stop-alarm-check', () => {
 });
 
 // ==================== 告警系统 IPC 结束 ====================
+
+// ==================== 本地历史记录 IPC ====================
+
+// 获取历史记录
+ipcMain.handle('get-history', (event, serverId, options = {}) => {
+  const history = getHistory(serverId, options);
+  return { success: true, history };
+});
+
+// 获取历史记录概览
+ipcMain.handle('get-history-summary', () => {
+  const summary = getHistorySummary();
+  return { success: true, summary };
+});
+
+// 添加历史记录数据点
+ipcMain.handle('add-history-point', (event, serverId, data) => {
+  const point = addHistoryPoint(serverId, data);
+  return { success: true, point };
+});
+
+// 清空指定服务器的历史记录
+ipcMain.handle('clear-server-history', (event, serverId) => {
+  const result = clearServerHistory(serverId);
+  return { success: result };
+});
+
+// 清空所有历史记录
+ipcMain.handle('clear-all-history', () => {
+  const result = clearAllHistory();
+  return { success: result };
+});
+
+// 导出历史记录
+ipcMain.handle('export-history', (event, serverId, format = 'json') => {
+  const content = exportHistory(serverId, format);
+  
+  // 保存到文件
+  if (content) {
+    const ext = format === 'csv' ? 'csv' : 'json';
+    const defaultPath = path.join(
+      app.getPath('documents'),
+      `server-history-${serverId}-${Date.now()}.${ext}`
+    );
+    
+    dialog.showSaveDialog(mainWindow, {
+      title: '导出历史记录',
+      defaultPath,
+      filters: [
+        { name: format.toUpperCase() + ' 文件', extensions: [ext] },
+        { name: '所有文件', extensions: ['*'] }
+      ]
+    }).then((result) => {
+      if (!result.canceled && result.filePath) {
+        fs.writeFileSync(result.filePath, content, 'utf-8');
+        sendNotification('导出成功', `历史记录已导出到: ${result.filePath}`);
+      }
+    }).catch((err) => {
+      console.error('导出历史记录失败:', err);
+    });
+  }
+  
+  return { success: true, content };
+});
+
+// ==================== 本地历史记录 IPC 结束 ====================
 
 // ==================== 截图功能 ====================
 const screenshotsDir = path.join(app.getPath('pictures'), 'Server Monitor Screenshots');

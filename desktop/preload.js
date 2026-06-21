@@ -53,6 +53,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getCurrentServer: () => ipcRenderer.invoke('get-current-server'),
   setCurrentServer: (serverId) => ipcRenderer.invoke('set-current-server', serverId),
   connectServer: (serverId) => ipcRenderer.invoke('connect-server', serverId),
+  connectSSH: (serverId) => ipcRenderer.invoke('connect-ssh', serverId),
   
   // 服务器列表更新监听
   onServersUpdate: (callback) => {
@@ -80,6 +81,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onAlarmRulesUpdated: (callback) => {
     ipcRenderer.on('alarm-rules-updated', (event, data) => callback(data));
   },
+  
+  // 本地历史记录
+  getHistory: (serverId, options) => ipcRenderer.invoke('get-history', serverId, options),
+  getHistorySummary: () => ipcRenderer.invoke('get-history-summary'),
+  addHistoryPoint: (serverId, data) => ipcRenderer.invoke('add-history-point', serverId, data),
+  clearServerHistory: (serverId) => ipcRenderer.invoke('clear-server-history', serverId),
+  clearAllHistory: () => ipcRenderer.invoke('clear-all-history'),
+  exportHistory: (serverId, format) => ipcRenderer.invoke('export-history', serverId, format),
   
   // 截图功能
   takeScreenshot: () => ipcRenderer.invoke('take-screenshot'),
