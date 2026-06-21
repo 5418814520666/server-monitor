@@ -193,6 +193,427 @@ let currentServerId = null;
 
 // ==================== 多服务器管理结束 ====================
 
+// ==================== 告警系统 ====================
+
+// 告警规则文件路径
+const alarmRulesPath = path.join(app.getPath('userData'), 'alarm-rules.json');
+// 告警日志文件路径
+const alarmLogsPath = path.join(app.getPath('userData'), 'alarm-logs.json');
+
+// 告警规则
+let alarmRules = [];
+// 告警日志
+let alarmLogs = [];
+// 告警检测定时器
+let alarmCheckInterval = null;
+// 服务器状态缓存（用于判断持续时间）
+let serverStatusCache = {};
+
+// 读取告警规则
+function readAlarmRules() {
+  try {
+    if (fs.existsSync(alarmRulesPath)) {
+      const data = fs.readFileSync(alarmRulesPath, 'utf-8');
+      alarmRules = JSON.parse(data);
+    }
+  } catch (e) {
+    console.error('读取告警规则失败:', e);
+    alarmRules = [];
+  }
+  return alarmRules;
+}
+
+// 保存告警规则
+function saveAlarmRules() {
+  try {
+    fs.writeFileSync(alarmRulesPath, JSON.stringify(alarmRules, null, 2), 'utf-8');
+    return true;
+  } catch (e) {
+    console.error('保存告警规则失败:', e);
+    return false;
+  }
+}
+
+// 读取告警日志
+function readAlarmLogs() {
+  try {
+    if (fs.existsSync(alarmLogsPath)) {
+      const data = fs.readFileSync(alarmLogsPath, 'utf-8');
+      alarmLogs = JSON.parse(data);
+    }
+  } catch (e) {
+    console.error('读取告警日志失败:', e);
+    alarmLogs = [];
+  }
+  return alarmLogs;
+}
+
+// 保存告警日志
+function saveAlarmLogs() {
+  try {
+    // 只保留最近 1000 条日志
+    if (alarmLogs.length > 1000) {
+      alarmLogs = alarmLogs.slice(-1000);
+    }
+    fs.writeFileSync(alarmLogsPath, JSON.stringify(alarmLogs, null, 2), 'utf-8');
+    return true;
+  } catch (e) {
+    console.error('保存告警日志失败:', e);
+    return false;
+  }
+}
+
+// 添加告警日志
+function addAlarmLog(serverId, serverName, type, value, threshold, level, message) {
+  const log = {
+    id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+    serverId,
+    serverName,
+    type,
+    value,
+    threshold,
+    level,
+    message,
+    timestamp: new Date().toISOString(),
+    resolved: false,
+    resolvedAt: null
+  };
+  
+  alarmLogs.unshift(log);
+  saveAlarmLogs();
+  
+  // 发送通知
+  if (appConfig.enableNotifications !== false) {
+    sendNotification(
+      `⚠️ ${level === 'critical' ? '严重' : '警告'}告警 - ${serverName}`,
+      message,
+      { urgency: level === 'critical' ? 'critical' : 'normal' }
+    );
+  }
+  
+  // 通知渲染进程
+  if (mainWindow) {
+    mainWindow.webContents.send('alarm-triggered', log);
+  }
+  
+  return log;
+}
+
+// 解决告警
+function resolveAlarm(logId) {
+  const log = alarmLogs.find(l => l.id === logId);
+  if (log && !log.resolved) {
+    log.resolved = true;
+    log.resolvedAt = new Date().toISOString();
+    saveAlarmLogs();
+    
+    if (mainWindow) {
+      mainWindow.webContents.send('alarm-resolved', log);
+    }
+    
+    return true;
+  }
+  return false;
+}
+
+// 添加告警规则
+function addAlarmRule(rule) {
+  const newRule = {
+    id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+    serverId: rule.serverId || null, // null 表示所有服务器
+    type: rule.type, // cpu, memory, disk, network, offline
+    threshold: rule.threshold,
+    duration: rule.duration || 60, // 持续时间，默认60秒
+    level: rule.level || 'warning', // warning, critical
+    enabled: rule.enabled !== false,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  
+  alarmRules.push(newRule);
+  saveAlarmRules();
+  
+  if (mainWindow) {
+    mainWindow.webContents.send('alarm-rules-updated', alarmRules);
+  }
+  
+  return newRule;
+}
+
+// 更新告警规则
+function updateAlarmRule(ruleId, updates) {
+  const index = alarmRules.findIndex(r => r.id === ruleId);
+  if (index !== -1) {
+    alarmRules[index] = {
+      ...alarmRules[index],
+      ...updates,
+      updatedAt: new Date().toISOString()
+    };
+    saveAlarmRules();
+    
+    if (mainWindow) {
+      mainWindow.webContents.send('alarm-rules-updated', alarmRules);
+    }
+    
+    return alarmRules[index];
+  }
+  return null;
+}
+
+// 删除告警规则
+function deleteAlarmRule(ruleId) {
+  const index = alarmRules.findIndex(r => r.id === ruleId);
+  if (index !== -1) {
+    alarmRules.splice(index, 1);
+    saveAlarmRules();
+    
+    if (mainWindow) {
+      mainWindow.webContents.send('alarm-rules-updated', alarmRules);
+    }
+    
+    return true;
+  }
+  return false;
+}
+
+// 检测服务器告警
+async function checkServerAlarms(server) {
+  if (!server || !server.url) return;
+  
+  const serverId = server.id;
+  const serverName = server.name;
+  
+  // 初始化缓存
+  if (!serverStatusCache[serverId]) {
+    serverStatusCache[serverId] = {
+      cpu: { overThreshold: false, startTime: null },
+      memory: { overThreshold: false, startTime: null },
+      disk: { overThreshold: false, startTime: null },
+      network: { overThreshold: false, startTime: null },
+      offline: { overThreshold: false, startTime: null }
+    };
+  }
+  
+  try {
+    // 检测服务器是否在线
+    const healthUrl = `${server.url}/api/health`;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    
+    const response = await fetch(healthUrl, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      throw new Error('服务器响应异常');
+    }
+    
+    // 服务器在线，尝试获取详细信息
+    try {
+      const infoUrl = `${server.url}/api/info`;
+      const infoResponse = await fetch(infoUrl, {
+        signal: AbortSignal.timeout(5000),
+        headers: server.username ? {
+          'Authorization': 'Basic ' + Buffer.from(`${server.username}:${server.password}`).toString('base64')
+        } : {}
+      });
+      
+      if (infoResponse.ok) {
+        const data = await infoResponse.json();
+        
+        // 检测各项指标
+        checkMetricAlarm(serverId, serverName, 'cpu', data.cpu?.usage || 0, serverStatusCache[serverId].cpu);
+        checkMetricAlarm(serverId, serverName, 'memory', data.memory?.usage || 0, serverStatusCache[serverId].memory);
+        
+        // 磁盘检测（取使用率最高的分区）
+        if (data.disk && data.disk.length > 0) {
+          const maxDiskUsage = Math.max(...data.disk.map(d => d.usage || 0));
+          checkMetricAlarm(serverId, serverName, 'disk', maxDiskUsage, serverStatusCache[serverId].disk);
+        }
+        
+        // 网络检测（取总速率）
+        if (data.network) {
+          const totalSpeed = (data.network.uploadSpeed || 0) + (data.network.downloadSpeed || 0);
+          // 网络告警阈值单位为 MB/s，转换为 KB/s 比较
+          checkMetricAlarm(serverId, serverName, 'network', totalSpeed / 1024, serverStatusCache[serverId].network);
+        }
+        
+        // 离线状态恢复
+        if (serverStatusCache[serverId].offline.overThreshold) {
+          serverStatusCache[serverId].offline.overThreshold = false;
+          serverStatusCache[serverId].offline.startTime = null;
+          // 查找未解决的离线告警并标记为已解决
+          const offlineAlarms = alarmLogs.filter(
+            l => l.serverId === serverId && l.type === 'offline' && !l.resolved
+          );
+          offlineAlarms.forEach(alarm => resolveAlarm(alarm.id));
+        }
+        
+        return;
+      }
+    } catch (e) {
+      // 获取详细信息失败，但健康检查成功，可能是认证问题
+      console.log(`获取服务器 ${serverName} 详细信息失败:`, e.message);
+    }
+    
+    // 服务器在线但无法获取详细信息，只检查离线告警恢复
+    if (serverStatusCache[serverId].offline.overThreshold) {
+      serverStatusCache[serverId].offline.overThreshold = false;
+      serverStatusCache[serverId].offline.startTime = null;
+      const offlineAlarms = alarmLogs.filter(
+        l => l.serverId === serverId && l.type === 'offline' && !l.resolved
+      );
+      offlineAlarms.forEach(alarm => resolveAlarm(alarm.id));
+    }
+    
+  } catch (e) {
+    // 服务器离线
+    checkOfflineAlarm(serverId, serverName, serverStatusCache[serverId].offline);
+  }
+}
+
+// 检测指标告警
+function checkMetricAlarm(serverId, serverName, type, currentValue, cache) {
+  // 查找适用的规则
+  const rules = alarmRules.filter(
+    r => r.enabled && r.type === type && (r.serverId === serverId || r.serverId === null)
+  );
+  
+  if (rules.length === 0) return;
+  
+  // 取最严格的规则（阈值最低或级别最高）
+  const rule = rules.reduce((prev, curr) => {
+    if (curr.level === 'critical' && prev.level !== 'critical') return curr;
+    if (curr.threshold < prev.threshold) return curr;
+    return prev;
+  });
+  
+  const isOverThreshold = currentValue >= rule.threshold;
+  const now = Date.now();
+  
+  if (isOverThreshold) {
+    if (!cache.overThreshold) {
+      cache.overThreshold = true;
+      cache.startTime = now;
+    } else {
+      const duration = (now - cache.startTime) / 1000;
+      if (duration >= rule.duration) {
+        // 检查是否已有未解决的同类型告警
+        const existingAlarm = alarmLogs.find(
+          l => l.serverId === serverId && l.type === type && !l.resolved
+        );
+        
+        if (!existingAlarm) {
+          const typeNames = {
+            cpu: 'CPU使用率',
+            memory: '内存使用率',
+            disk: '磁盘使用率',
+            network: '网络速率'
+          };
+          
+          const unit = type === 'network' ? ' MB/s' : '%';
+          
+          addAlarmLog(
+            serverId,
+            serverName,
+            type,
+            currentValue,
+            rule.threshold,
+            rule.level,
+            `${typeNames[type]}超过阈值：${currentValue.toFixed(1)}${unit}（阈值：${rule.threshold}${unit}）`
+          );
+        }
+      }
+    }
+  } else {
+    if (cache.overThreshold) {
+      cache.overThreshold = false;
+      cache.startTime = null;
+      
+      // 查找未解决的同类型告警并标记为已解决
+      const typeAlarms = alarmLogs.filter(
+        l => l.serverId === serverId && l.type === type && !l.resolved
+      );
+      typeAlarms.forEach(alarm => resolveAlarm(alarm.id));
+    }
+  }
+}
+
+// 检测离线告警
+function checkOfflineAlarm(serverId, serverName, cache) {
+  // 查找离线告警规则
+  const rules = alarmRules.filter(
+    r => r.enabled && r.type === 'offline' && (r.serverId === serverId || r.serverId === null)
+  );
+  
+  if (rules.length === 0) return;
+  
+  const rule = rules.reduce((prev, curr) => {
+    if (curr.level === 'critical' && prev.level !== 'critical') return curr;
+    if (curr.duration < prev.duration) return curr;
+    return prev;
+  });
+  
+  const now = Date.now();
+  
+  if (!cache.overThreshold) {
+    cache.overThreshold = true;
+    cache.startTime = now;
+  } else {
+    const duration = (now - cache.startTime) / 1000;
+    if (duration >= rule.duration) {
+      const existingAlarm = alarmLogs.find(
+        l => l.serverId === serverId && l.type === 'offline' && !l.resolved
+      );
+      
+      if (!existingAlarm) {
+        addAlarmLog(
+          serverId,
+          serverName,
+          'offline',
+          0,
+          0,
+          rule.level,
+          `服务器离线，无法连接`
+        );
+      }
+    }
+  }
+}
+
+// 检测所有服务器告警
+async function checkAllServersAlarms() {
+  for (const server of servers) {
+    await checkServerAlarms(server);
+  }
+}
+
+// 启动告警检测
+function startAlarmCheck() {
+  if (alarmCheckInterval) {
+    clearInterval(alarmCheckInterval);
+  }
+  
+  // 每 30 秒检测一次
+  alarmCheckInterval = setInterval(() => {
+    checkAllServersAlarms().catch(e => {
+      console.error('告警检测失败:', e);
+    });
+  }, 30000);
+  
+  console.log('告警检测已启动');
+}
+
+// 停止告警检测
+function stopAlarmCheck() {
+  if (alarmCheckInterval) {
+    clearInterval(alarmCheckInterval);
+    alarmCheckInterval = null;
+    console.log('告警检测已停止');
+  }
+}
+
+// ==================== 告警系统结束 ====================
+
 // 创建托盘图标（根据状态）
 function createTrayIcon(status) {
   // 使用 nativeImage 创建简单的图标
@@ -1061,6 +1482,99 @@ function sendServersUpdate() {
 
 // ==================== 多服务器管理 IPC 结束 ====================
 
+// ==================== 告警系统 IPC ====================
+
+// 获取告警规则
+ipcMain.handle('get-alarm-rules', () => {
+  return { success: true, rules: readAlarmRules() };
+});
+
+// 添加告警规则
+ipcMain.handle('add-alarm-rule', (event, rule) => {
+  const newRule = addAlarmRule(rule);
+  return { success: true, rule: newRule };
+});
+
+// 更新告警规则
+ipcMain.handle('update-alarm-rule', (event, ruleId, updates) => {
+  const updated = updateAlarmRule(ruleId, updates);
+  if (updated) {
+    return { success: true, rule: updated };
+  }
+  return { success: false, error: '告警规则不存在' };
+});
+
+// 删除告警规则
+ipcMain.handle('delete-alarm-rule', (event, ruleId) => {
+  const deleted = deleteAlarmRule(ruleId);
+  if (deleted) {
+    return { success: true };
+  }
+  return { success: false, error: '告警规则不存在' };
+});
+
+// 获取告警日志
+ipcMain.handle('get-alarm-logs', (event, options = {}) => {
+  let logs = readAlarmLogs();
+  
+  // 按服务器过滤
+  if (options.serverId) {
+    logs = logs.filter(l => l.serverId === options.serverId);
+  }
+  
+  // 按类型过滤
+  if (options.type) {
+    logs = logs.filter(l => l.type === options.type);
+  }
+  
+  // 按级别过滤
+  if (options.level) {
+    logs = logs.filter(l => l.level === options.level);
+  }
+  
+  // 按状态过滤
+  if (options.resolved !== undefined) {
+    logs = logs.filter(l => l.resolved === options.resolved);
+  }
+  
+  // 分页
+  const limit = options.limit || 50;
+  const offset = options.offset || 0;
+  const total = logs.length;
+  logs = logs.slice(offset, offset + limit);
+  
+  return { success: true, logs, total, limit, offset };
+});
+
+// 解决告警
+ipcMain.handle('resolve-alarm', (event, logId) => {
+  const resolved = resolveAlarm(logId);
+  if (resolved) {
+    return { success: true };
+  }
+  return { success: false, error: '告警日志不存在或已解决' };
+});
+
+// 手动检测告警
+ipcMain.handle('check-alarms', async () => {
+  await checkAllServersAlarms();
+  return { success: true };
+});
+
+// 启动告警检测
+ipcMain.handle('start-alarm-check', () => {
+  startAlarmCheck();
+  return { success: true };
+});
+
+// 停止告警检测
+ipcMain.handle('stop-alarm-check', () => {
+  stopAlarmCheck();
+  return { success: true };
+});
+
+// ==================== 告警系统 IPC 结束 ====================
+
 // 应用就绪
 app.whenReady().then(() => {
   // 设置开机自启动
@@ -1082,6 +1596,11 @@ app.whenReady().then(() => {
   
   // 注册全局快捷键
   registerGlobalShortcuts();
+  
+  // 初始化告警系统
+  readAlarmRules();
+  readAlarmLogs();
+  startAlarmCheck();
   
   // 启动后检查更新（延迟2秒）
   if (!isDev) {

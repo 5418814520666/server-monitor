@@ -59,6 +59,28 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('servers-update', (event, data) => callback(data));
   },
   
+  // 告警系统
+  getAlarmRules: () => ipcRenderer.invoke('get-alarm-rules'),
+  addAlarmRule: (rule) => ipcRenderer.invoke('add-alarm-rule', rule),
+  updateAlarmRule: (ruleId, updates) => ipcRenderer.invoke('update-alarm-rule', ruleId, updates),
+  deleteAlarmRule: (ruleId) => ipcRenderer.invoke('delete-alarm-rule', ruleId),
+  getAlarmLogs: (options) => ipcRenderer.invoke('get-alarm-logs', options),
+  resolveAlarm: (logId) => ipcRenderer.invoke('resolve-alarm', logId),
+  checkAlarms: () => ipcRenderer.invoke('check-alarms'),
+  startAlarmCheck: () => ipcRenderer.invoke('start-alarm-check'),
+  stopAlarmCheck: () => ipcRenderer.invoke('stop-alarm-check'),
+  
+  // 告警事件监听
+  onAlarmTriggered: (callback) => {
+    ipcRenderer.on('alarm-triggered', (event, data) => callback(data));
+  },
+  onAlarmResolved: (callback) => {
+    ipcRenderer.on('alarm-resolved', (event, data) => callback(data));
+  },
+  onAlarmRulesUpdated: (callback) => {
+    ipcRenderer.on('alarm-rules-updated', (event, data) => callback(data));
+  },
+  
   // 平台信息
   platform: process.platform,
   

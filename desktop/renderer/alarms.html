@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>告警管理 - 服务器监控系统</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      min-height: 100vh;
+      color: #fff;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .page-title {
+      font-size: 28px;
+      font-weight: 600;
+      background: linear-gradient(90deg, #00d4ff, #7b2cbf);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #00d4ff, #7b2cbf);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-danger:hover {
+      background: rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-success {
+      background: rgba(34, 197, 94, 0.2);
+      color: #22c55e;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+
+    .btn-success:hover {
+      background: rgba(34, 197, 94, 0.3);
+    }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 24px;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 4px;
+      border-radius: 12px;
+      width: fit-content;
+    }
+
+    .tab {
+      padding: 10px 24px;
+      border: none;
+      background: transparent;
+      color: rgba(255, 255, 255, 0.6);
+      cursor: pointer;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+
+    .tab.active {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+
+    .tab:hover:not(.active) {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .filter-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .filter-label {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .select, .input {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      padding: 8px 12px;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+
+    .select:focus, .input:focus {
+      border-color: #00d4ff;
+      box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+    }
+
+    .select option {
+      background: #1a1a2e;
+      color: #fff;
+    }
+
+    .rules-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .rule-item {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.3s ease;
+    }
+
+    .rule-item:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    .rule-info {
+      flex: 1;
+    }
+
+    .rule-name {
+      font-size: 15px;
+      font-weight: 500;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .rule-type-badge {
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .type-cpu { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
+    .type-memory { background: rgba(168, 85, 247, 0.2); color: #a855f7; }
+    .type-disk { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+    .type-network { background: rgba(249, 115, 22, 0.2); color: #f97316; }
+    .type-offline { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+
+    .level-badge {
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .level-warning { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
+    .level-critical { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+
+    .rule-desc {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .rule-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(255, 255, 255, 0.2);
+      transition: 0.3s;
+      border-radius: 24px;
+    }
+
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .toggle-slider {
+      background: linear-gradient(135deg, #00d4ff, #7b2cbf);
+    }
+
+    input:checked + .toggle-slider:before {
+      transform: translateX(20px);
+    }
+
+    .logs-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .logs-table th,
+    .logs-table td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .logs-table th {
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.5);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .logs-table tr:hover {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .status-active {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+    }
+
+    .status-resolved {
+      background: rgba(34, 197, 94, 0.15);
+      color: #22c55e;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 28px;
+      width: 100%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 24px;
+      cursor: pointer;
+      padding: 4px;
+      line-height: 1;
+    }
+
+    .modal-close:hover {
+      color: #fff;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 8px;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .form-input, .form-select {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+
+    .form-input:focus, .form-select:focus {
+      border-color: #00d4ff;
+      box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+    }
+
+    .form-select option {
+      background: #1a1a2e;
+      color: #fff;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .form-hint {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.4);
+      margin-top: 6px;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .empty-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .empty-text {
+      font-size: 16px;
+      margin-bottom: 8px;
+    }
+
+    .empty-desc {
+      font-size: 14px;
+    }
+
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      margin-top: 20px;
+    }
+
+    .page-btn {
+      padding: 8px 14px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      color: #fff;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.3s ease;
+    }
+
+    .page-btn:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .page-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .page-btn.active {
+      background: linear-gradient(135deg, #00d4ff, #7b2cbf);
+      border-color: transparent;
+    }
+
+    .page-info {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.5);
+      margin: 0 12px;
+    }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      color: #fff;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      text-decoration: none;
+    }
+
+    .back-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 20px;
+    }
+
+    .stat-label {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.6);
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      background: linear-gradient(90deg, #00d4ff, #7b2cbf);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat-value.warning {
+      background: linear-gradient(90deg, #fbbf24, #f59e0b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat-value.critical {
+      background: linear-gradient(90deg, #ef4444, #dc2626);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat-value.success {
+      background: linear-gradient(90deg, #22c55e, #16a34a);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    @media (max-width: 768px) {
+      .stats-row {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+      
+      .page-header {
+        flex-direction: column;
+        gap: 16px;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="page-header">
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <button class="back-btn" onclick="goBack()">
+          ← 返回
+        </button>
+        <h1 class="page-title">告警管理</h1>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-secondary btn-sm" onclick="checkAlarms()">
+          🔄 立即检测
+        </button>
+        <button class="btn btn-primary" onclick="openAddRuleModal()">
+          + 添加规则
+        </button>
+      </div>
+    </div>
+
+    <!-- 统计卡片 -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">告警规则</div>
+        <div class="stat-value" id="statRules">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">活跃告警</div>
+        <div class="stat-value warning" id="statActive">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">严重告警</div>
+        <div class="stat-value critical" id="statCritical">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">已解决</div>
+        <div class="stat-value success" id="statResolved">0</div>
+      </div>
+    </div>
+
+    <!-- 标签页 -->
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('rules')">告警规则</button>
+      <button class="tab" onclick="switchTab('logs')">告警日志</button>
+    </div>
+
+    <!-- 告警规则标签页 -->
+    <div class="tab-content active" id="tab-rules">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">告警规则列表</div>
+        </div>
+        <div class="rules-list" id="rulesList">
+          <!-- 规则列表将通过 JS 渲染 -->
+        </div>
+      </div>
+    </div>
+
+    <!-- 告警日志标签页 -->
+    <div class="tab-content" id="tab-logs">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">告警日志</div>
+        </div>
+        
+        <div class="filter-bar">
+          <div class="filter-group">
+            <span class="filter-label">服务器:</span>
+            <select class="select" id="filterServer" onchange="loadLogs()">
+              <option value="">全部服务器</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <span class="filter-label">类型:</span>
+            <select class="select" id="filterType" onchange="loadLogs()">
+              <option value="">全部类型</option>
+              <option value="cpu">CPU</option>
+              <option value="memory">内存</option>
+              <option value="disk">磁盘</option>
+              <option value="network">网络</option>
+              <option value="offline">离线</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <span class="filter-label">级别:</span>
+            <select class="select" id="filterLevel" onchange="loadLogs()">
+              <option value="">全部级别</option>
+              <option value="warning">警告</option>
+              <option value="critical">严重</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <span class="filter-label">状态:</span>
+            <select class="select" id="filterStatus" onchange="loadLogs()">
+              <option value="">全部状态</option>
+              <option value="active">未解决</option>
+              <option value="resolved">已解决</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="overflow-x: auto;">
+          <table class="logs-table">
+            <thead>
+              <tr>
+                <th>时间</th>
+                <th>服务器</th>
+                <th>类型</th>
+                <th>级别</th>
+                <th>消息</th>
+                <th>状态</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="logsTableBody">
+              <!-- 日志将通过 JS 渲染 -->
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pagination" id="pagination">
+          <!-- 分页将通过 JS 渲染 -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 添加/编辑规则模态框 -->
+  <div class="modal-overlay" id="ruleModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">添加告警规则</div>
+        <button class="modal-close" onclick="closeRuleModal()">&times;</button>
+      </div>
+      
+      <form id="ruleForm" onsubmit="saveRule(event)">
+        <input type="hidden" id="ruleId">
+        
+        <div class="form-group">
+          <label class="form-label">规则名称</label>
+          <input type="text" class="form-input" id="ruleName" placeholder="例如：CPU使用率过高" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">告警类型</label>
+            <select class="form-select" id="ruleType" required onchange="updateThresholdHint()">
+              <option value="cpu">CPU使用率</option>
+              <option value="memory">内存使用率</option>
+              <option value="disk">磁盘使用率</option>
+              <option value="network">网络速率</option>
+              <option value="offline">服务器离线</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">告警级别</label>
+            <select class="form-select" id="ruleLevel" required>
+              <option value="warning">警告</option>
+              <option value="critical">严重</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group" id="thresholdGroup">
+            <label class="form-label">阈值</label>
+            <input type="number" class="form-input" id="ruleThreshold" value="80" min="0" step="0.1" required>
+            <div class="form-hint" id="thresholdHint">单位：百分比 (%)</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">持续时间</label>
+            <input type="number" class="form-input" id="ruleDuration" value="60" min="1" required>
+            <div class="form-hint">单位：秒</div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">适用服务器</label>
+          <select class="form-select" id="ruleServer">
+            <option value="">所有服务器</option>
+          </select>
+          <div class="form-hint">选择特定服务器或应用到所有服务器</div>
+        </div>
+
+        <div class="form-group">
+          <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+            <input type="checkbox" id="ruleEnabled" checked>
+            <span>启用此规则</span>
+          </label>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeRuleModal()">取消</button>
+          <button type="submit" class="btn btn-primary">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    let currentTab = 'rules';
+    let currentPage = 1;
+    const pageSize = 20;
+    let alarmRules = [];
+    let alarmLogs = [];
+    let servers = [];
+
+    // 初始化
+    document.addEventListener('DOMContentLoaded', () => {
+      loadServers();
+      loadRules();
+      loadLogs();
+      loadStats();
+      
+      // 监听告警事件
+      if (window.electronAPI) {
+        window.electronAPI.onAlarmTriggered((alarm) => {
+          console.log('告警触发:', alarm);
+          loadLogs();
+          loadStats();
+        });
+        
+        window.electronAPI.onAlarmResolved((alarm) => {
+          console.log('告警解决:', alarm);
+          loadLogs();
+          loadStats();
+        });
+        
+        window.electronAPI.onAlarmRulesUpdated((rules) => {
+          alarmRules = rules;
+          renderRules();
+          loadStats();
+        });
+      }
+    });
+
+    // 返回
+    function goBack() {
+      if (window.electronAPI) {
+        window.electronAPI.goConfig();
+      } else {
+        window.history.back();
+      }
+    }
+
+    // 切换标签页
+    function switchTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('tab-' + tab).classList.add('active');
+      
+      if (tab === 'logs') {
+        loadLogs();
+      }
+    }
+
+    // 加载服务器列表
+    async function loadServers() {
+      if (!window.electronAPI) return;
+      
+      try {
+        const result = await window.electronAPI.getServers();
+        if (result.success) {
+          servers = result.servers;
+          
+          // 更新服务器下拉选项
+          const filterServer = document.getElementById('filterServer');
+          const ruleServer = document.getElementById('ruleServer');
+          
+          servers.forEach(server => {
+            const option1 = document.createElement('option');
+            option1.value = server.id;
+            option1.textContent = server.name;
+            filterServer.appendChild(option1);
+            
+            const option2 = document.createElement('option');
+            option2.value = server.id;
+            option2.textContent = server.name;
+            ruleServer.appendChild(option2);
+          });
+        }
+      } catch (e) {
+        console.error('加载服务器列表失败:', e);
+      }
+    }
+
+    // 加载告警规则
+    async function loadRules() {
+      if (!window.electronAPI) return;
+      
+      try {
+        const result = await window.electronAPI.getAlarmRules();
+        if (result.success) {
+          alarmRules = result.rules;
+          renderRules();
+        }
+      } catch (e) {
+        console.error('加载告警规则失败:', e);
+      }
+    }
+
+    // 渲染规则列表
+    function renderRules() {
+      const container = document.getElementById('rulesList');
+      
+      if (alarmRules.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">📋</div>
+            <div class="empty-text">暂无告警规则</div>
+            <div class="empty-desc">点击上方"添加规则"按钮创建第一条告警规则</div>
+          </div>
+        `;
+        return;
+      }
+      
+      const typeNames = {
+        cpu: 'CPU使用率',
+        memory: '内存使用率',
+        disk: '磁盘使用率',
+        network: '网络速率',
+        offline: '服务器离线'
+      };
+      
+      const levelNames = {
+        warning: '警告',
+        critical: '严重'
+      };
+      
+      container.innerHTML = alarmRules.map(rule => {
+        const serverName = rule.serverId 
+          ? servers.find(s => s.id === rule.serverId)?.name || '未知服务器'
+          : '所有服务器';
+        
+        const unit = rule.type === 'network' ? ' MB/s' : '%';
+        
+        return `
+          <div class="rule-item">
+            <div class="rule-info">
+              <div class="rule-name">
+                <span class="rule-type-badge type-${rule.type}">${typeNames[rule.type]}</span>
+                <span class="level-badge level-${rule.level}">${levelNames[rule.level]}</span>
+                <span>${rule.threshold}${unit} 阈值</span>
+              </div>
+              <div class="rule-desc">
+                持续 ${rule.duration} 秒 · ${serverName} · 
+                ${rule.enabled ? '<span style="color: #22c55e;">已启用</span>' : '<span style="color: #6b7280;">已禁用</span>'}
+              </div>
+            </div>
+            <div class="rule-actions">
+              <label class="toggle-switch">
+                <input type="checkbox" ${rule.enabled ? 'checked' : ''} onchange="toggleRule('${rule.id}', this.checked)">
+                <span class="toggle-slider"></span>
+              </label>
+              <button class="btn btn-secondary btn-sm" onclick="editRule('${rule.id}')">编辑</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteRule('${rule.id}')">删除</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // 切换规则启用状态
+    async function toggleRule(ruleId, enabled) {
+      if (!window.electronAPI) return;
+      
+      try {
+        await window.electronAPI.updateAlarmRule(ruleId, { enabled });
+        loadRules();
+      } catch (e) {
+        console.error('切换规则状态失败:', e);
+      }
+    }
+
+    // 打开添加规则模态框
+    function openAddRuleModal() {
+      document.getElementById('modalTitle').textContent = '添加告警规则';
+      document.getElementById('ruleForm').reset();
+      document.getElementById('ruleId').value = '';
+      document.getElementById('ruleEnabled').checked = true;
+      updateThresholdHint();
+      document.getElementById('ruleModal').classList.add('active');
+    }
+
+    // 编辑规则
+    function editRule(ruleId) {
+      const rule = alarmRules.find(r => r.id === ruleId);
+      if (!rule) return;
+      
+      document.getElementById('modalTitle').textContent = '编辑告警规则';
+      document.getElementById('ruleId').value = rule.id;
+      document.getElementById('ruleName').value = rule.name || '';
+      document.getElementById('ruleType').value = rule.type;
+      document.getElementById('ruleLevel').value = rule.level;
+      document.getElementById('ruleThreshold').value = rule.threshold;
+      document.getElementById('ruleDuration').value = rule.duration;
+      document.getElementById('ruleServer').value = rule.serverId || '';
+      document.getElementById('ruleEnabled').checked = rule.enabled;
+      
+      updateThresholdHint();
+      document.getElementById('ruleModal').classList.add('active');
+    }
+
+    // 关闭规则模态框
+    function closeRuleModal() {
+      document.getElementById('ruleModal').classList.remove('active');
+    }
+
+    // 更新阈值提示
+    function updateThresholdHint() {
+      const type = document.getElementById('ruleType').value;
+      const hint = document.getElementById('thresholdHint');
+      const thresholdGroup = document.getElementById('thresholdGroup');
+      
+      if (type === 'offline') {
+        thresholdGroup.style.display = 'none';
+      } else {
+        thresholdGroup.style.display = 'block';
+        if (type === 'network') {
+          hint.textContent = '单位：MB/s（总速率）';
+        } else {
+          hint.textContent = '单位：百分比 (%)';
+        }
+      }
+    }
+
+    // 保存规则
+    async function saveRule(event) {
+      event.preventDefault();
+      if (!window.electronAPI) return;
+      
+      const ruleId = document.getElementById('ruleId').value;
+      const rule = {
+        name: document.getElementById('ruleName').value,
+        type: document.getElementById('ruleType').value,
+        level: document.getElementById('ruleLevel').value,
+        threshold: parseFloat(document.getElementById('ruleThreshold').value),
+        duration: parseInt(document.getElementById('ruleDuration').value),
+        serverId: document.getElementById('ruleServer').value || null,
+        enabled: document.getElementById('ruleEnabled').checked
+      };
+      
+      // 离线类型不需要阈值
+      if (rule.type === 'offline') {
+        rule.threshold = 0;
+      }
+      
+      try {
+        if (ruleId) {
+          await window.electronAPI.updateAlarmRule(ruleId, rule);
+        } else {
+          await window.electronAPI.addAlarmRule(rule);
+        }
+        
+        closeRuleModal();
+        loadRules();
+        loadStats();
+      } catch (e) {
+        console.error('保存规则失败:', e);
+        alert('保存失败: ' + e.message);
+      }
+    }
+
+    // 删除规则
+    async function deleteRule(ruleId) {
+      if (!confirm('确定要删除这条告警规则吗？')) return;
+      if (!window.electronAPI) return;
+      
+      try {
+        await window.electronAPI.deleteAlarmRule(ruleId);
+        loadRules();
+        loadStats();
+      } catch (e) {
+        console.error('删除规则失败:', e);
+      }
+    }
+
+    // 加载告警日志
+    async function loadLogs() {
+      if (!window.electronAPI) return;
+      
+      const options = {
+        limit: pageSize,
+        offset: (currentPage - 1) * pageSize
+      };
+      
+      const serverId = document.getElementById('filterServer').value;
+      const type = document.getElementById('filterType').value;
+      const level = document.getElementById('filterLevel').value;
+      const status = document.getElementById('filterStatus').value;
+      
+      if (serverId) options.serverId = serverId;
+      if (type) options.type = type;
+      if (level) options.level = level;
+      if (status === 'active') options.resolved = false;
+      if (status === 'resolved') options.resolved = true;
+      
+      try {
+        const result = await window.electronAPI.getAlarmLogs(options);
+        if (result.success) {
+          alarmLogs = result.logs;
+          renderLogs();
+          renderPagination(result.total);
+        }
+      } catch (e) {
+        console.error('加载告警日志失败:', e);
+      }
+    }
+
+    // 渲染日志表格
+    function renderLogs() {
+      const tbody = document.getElementById('logsTableBody');
+      
+      if (alarmLogs.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7">
+              <div class="empty-state" style="padding: 40px 20px;">
+                <div class="empty-icon">📝</div>
+                <div class="empty-text">暂无告警日志</div>
+              </div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+      
+      const typeNames = {
+        cpu: 'CPU',
+        memory: '内存',
+        disk: '磁盘',
+        network: '网络',
+        offline: '离线'
+      };
+      
+      const levelNames = {
+        warning: '警告',
+        critical: '严重'
+      };
+      
+      tbody.innerHTML = alarmLogs.map(log => `
+        <tr>
+          <td style="font-size: 13px; color: rgba(255,255,255,0.6);">
+            ${formatTime(log.timestamp)}
+          </td>
+          <td>${log.serverName}</td>
+          <td>
+            <span class="rule-type-badge type-${log.type}">${typeNames[log.type]}</span>
+          </td>
+          <td>
+            <span class="level-badge level-${log.level}">${levelNames[log.level]}</span>
+          </td>
+          <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            ${log.message}
+          </td>
+          <td>
+            <span class="status-badge ${log.resolved ? 'status-resolved' : 'status-active'}">
+              <span class="status-dot"></span>
+              ${log.resolved ? '已解决' : '未解决'}
+            </span>
+          </td>
+          <td>
+            ${!log.resolved ? `
+              <button class="btn btn-success btn-sm" onclick="resolveAlarm('${log.id}')">
+                标记解决
+              </button>
+            ` : '-'}
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // 渲染分页
+    function renderPagination(total) {
+      const container = document.getElementById('pagination');
+      const totalPages = Math.ceil(total / pageSize);
+      
+      if (totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+      }
+      
+      let html = `
+        <button class="page-btn" onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>上一页</button>
+        <span class="page-info">第 ${currentPage} / ${totalPages} 页，共 ${total} 条</span>
+        <button class="page-btn" onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>下一页</button>
+      `;
+      
+      container.innerHTML = html;
+    }
+
+    // 跳转页面
+    function goToPage(page) {
+      currentPage = page;
+      loadLogs();
+    }
+
+    // 解决告警
+    async function resolveAlarm(logId) {
+      if (!window.electronAPI) return;
+      
+      try {
+        await window.electronAPI.resolveAlarm(logId);
+        loadLogs();
+        loadStats();
+      } catch (e) {
+        console.error('解决告警失败:', e);
+      }
+    }
+
+    // 立即检测告警
+    async function checkAlarms() {
+      if (!window.electronAPI) return;
+      
+      try {
+        await window.electronAPI.checkAlarms();
+        loadLogs();
+        loadStats();
+      } catch (e) {
+        console.error('检测告警失败:', e);
+      }
+    }
+
+    // 加载统计数据
+    async function loadStats() {
+      if (!window.electronAPI) return;
+      
+      try {
+        // 规则数量
+        const rulesResult = await window.electronAPI.getAlarmRules();
+        if (rulesResult.success) {
+          document.getElementById('statRules').textContent = rulesResult.rules.length;
+        }
+        
+        // 日志统计
+        const logsResult = await window.electronAPI.getAlarmLogs({ limit: 1000 });
+        if (logsResult.success) {
+          const logs = logsResult.logs;
+          const active = logs.filter(l => !l.resolved).length;
+          const critical = logs.filter(l => l.level === 'critical' && !l.resolved).length;
+          const resolved = logs.filter(l => l.resolved).length;
+          
+          document.getElementById('statActive').textContent = active;
+          document.getElementById('statCritical').textContent = critical;
+          document.getElementById('statResolved').textContent = resolved;
+        }
+      } catch (e) {
+        console.error('加载统计数据失败:', e);
+      }
+    }
+
+    // 格式化时间
+    function formatTime(isoString) {
+      const date = new Date(isoString);
+      const now = new Date();
+      const diff = now - date;
+      
+      if (diff < 60000) {
+        return '刚刚';
+      } else if (diff < 3600000) {
+        return Math.floor(diff / 60000) + ' 分钟前';
+      } else if (diff < 86400000) {
+        return Math.floor(diff / 3600000) + ' 小时前';
+      } else {
+        return date.toLocaleString('zh-CN', {
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      }
+    }
+
+    // 点击遮罩关闭模态框
+    document.getElementById('ruleModal').addEventListener('click', (e) => {
+      if (e.target.id === 'ruleModal') {
+        closeRuleModal();
+      }
+    });
+  </script>
+</body>
+</html>
