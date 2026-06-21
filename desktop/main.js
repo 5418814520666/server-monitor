@@ -2,6 +2,7 @@ const { app, BrowserWindow, Menu, ipcMain, shell, dialog, Tray, Notification, gl
 const path = require('path');
 const { autoUpdater } = require('electron-updater');
 const fs = require('fs');
+const crypto = require('crypto');
 
 // 开发模式判断
 const isDev = process.argv.includes('--dev') || process.env.NODE_ENV === 'development';
@@ -62,6 +63,50 @@ const defaultConfig = {
 
 // 合并配置
 appConfig = { ...defaultConfig, ...appConfig };
+
+// ==================== 密码管理器 ====================
+// 加密密钥（基于应用唯一标识生成，实际生产环境应该使用更安全的方式）
+const ENCRYPTION_KEY = crypto.scryptSync('server-monitor-secret-key', 'salt', 32);
+const ENCRYPTION_IV_LENGTH = 16;
+
+// 加密函数
+function encrypt(text) {
+  if (!text) return '';
+  try {
+    const iv = crypto.randomBytes(ENCRYPTION_IV_LENGTH);
+    const cipher = crypto.createCipheriv('aes-256-cbc', ENCRYPTION_KEY, iv);
+    let encrypted = cipher.update(text, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+    return iv.toString('hex') + ':' + encrypted;
+  } catch (e) {
+    console.error('加密失败:', e);
+    return text;
+  }
+}
+
+// 解密函数
+function decrypt(encryptedText) {
+  if (!encryptedText || !encryptedText.includes(':')) return encryptedText;
+  try {
+    const parts = encryptedText.split(':');
+    const iv = Buffer.from(parts[0], 'hex');
+    const encrypted = parts[1];
+    const decipher = crypto.createDecipheriv('aes-256-cbc', ENCRYPTION_KEY, iv);
+    let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    return decrypted;
+  } catch (e) {
+    console.error('解密失败:', e);
+    return encryptedText;
+  }
+}
+
+// 检查是否为加密文本
+function isEncrypted(text) {
+  return text && text.includes(':') && text.split(':')[0].length === ENCRYPTION_IV_LENGTH * 2;
+}
+
+// ==================== 密码管理器结束 ====================
 
 // ==================== 多服务器管理 ====================
 
