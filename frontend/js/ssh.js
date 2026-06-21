@@ -227,7 +227,8 @@ function connectSSH() {
 
     // 连接 WebSocket
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ssh`;
+    const sessionId = getSessionId();
+    const wsUrl = `${protocol}//${window.location.host}/ssh?sessionId=${encodeURIComponent(sessionId || '')}`;
 
     try {
         ws = new WebSocket(wsUrl);
