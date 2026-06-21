@@ -112,6 +112,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('update-data', (event, data) => callback(data));
   },
   
+  // SFTP 文件传输
+  sftpList: (serverId, path) => ipcRenderer.invoke('sftp-list', serverId, path),
+  sftpUpload: (serverId, localPath, remotePath) => ipcRenderer.invoke('sftp-upload', serverId, localPath, remotePath),
+  sftpDownload: (serverId, remotePath, localPath) => ipcRenderer.invoke('sftp-download', serverId, remotePath, localPath),
+  sftpDelete: (serverId, remotePath) => ipcRenderer.invoke('sftp-delete', serverId, remotePath),
+  sftpMkdir: (serverId, remotePath) => ipcRenderer.invoke('sftp-mkdir', serverId, remotePath),
+  sftpRename: (serverId, oldPath, newPath) => ipcRenderer.invoke('sftp-rename', serverId, oldPath, newPath),
+  sftpDisconnect: (serverId) => ipcRenderer.invoke('sftp-disconnect', serverId),
+  sftpSelectFiles: () => ipcRenderer.invoke('sftp-select-files'),
+  sftpSelectSavePath: (defaultName) => ipcRenderer.invoke('sftp-select-save-path', defaultName),
+  
   // 平台信息
   platform: process.platform,
   
