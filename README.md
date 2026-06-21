@@ -90,7 +90,11 @@ server-monitor/
 │   │   └── style.css    # 样式文件
 │   └── js/
 │       └── app.js       # 前端逻辑
+├── deploy/              # 部署配置文件
+│   ├── server-monitor.service  # systemd 服务配置
+│   └── nginx.conf       # Nginx 反向代理配置
 ├── deploy.sh            # 一键部署脚本
+├── ecosystem.config.js  # PM2 生态配置文件
 ├── package.json         # 项目根配置
 ├── .gitignore          # Git忽略文件
 └── README.md           # 项目说明
@@ -125,24 +129,113 @@ PORT=8080 npm start
 ### 数据保留
 默认保留最近 60 个数据点（约2分钟），可在 `backend/server.js` 中修改 `maxPoints` 参数。
 
-## 🚀 部署建议
+## 🚀 部署指南
 
-### 使用 PM2 部署
+### 方式一：一键部署脚本（推荐）
+
+项目提供了 `deploy.sh` 一键部署脚本，支持多种部署模式：
+
 ```bash
-npm install -g pm2
-cd backend
-pm2 start server.js --name server-monitor
+# 普通模式部署（后台运行）
+./deploy.sh
+
+# 使用 PM2 进程管理器部署（推荐生产环境）
+./deploy.sh --pm2
+
+# 使用 systemd 服务部署（需要 root 权限）
+sudo ./deploy.sh --systemd
+
+# 指定端口部署
+./deploy.sh --port 8080 --pm2
+
+# 查看帮助
+./deploy.sh --help
 ```
 
-### Nginx 反向代理
-```nginx
-location /monitor {
-    proxy_pass http://localhost:3000;
-    proxy_http_version 1.1;
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection "upgrade";
-    proxy_set_header Host $host;
-}
+**脚本功能：**
+- ✅ 自动检查 Node.js 环境
+- ✅ 自动安装项目依赖
+- ✅ 支持三种部署模式（普通/PM2/systemd）
+- ✅ 自动检测并处理端口占用
+- ✅ 显示访问地址和管理命令
+
+### 方式二：PM2 部署（生产环境推荐）
+
+使用项目提供的 PM2 生态配置文件：
+
+```bash
+# 全局安装 PM2
+npm install -g pm2
+
+# 使用生态文件启动
+pm2 start ecosystem.config.js
+
+# 查看状态
+pm2 status
+
+# 查看日志
+pm2 logs server-monitor
+
+# 保存进程列表（开机自启）
+pm2 save
+pm2 startup
+```
+
+### 方式三：systemd 服务部署
+
+适用于 Linux 系统服务管理：
+
+```bash
+# 复制服务文件
+sudo cp deploy/server-monitor.service /etc/systemd/system/
+
+# 修改服务文件中的路径和用户
+sudo nano /etc/systemd/system/server-monitor.service
+
+# 重载配置并启动
+sudo systemctl daemon-reload
+sudo systemctl enable server-monitor
+sudo systemctl start server-monitor
+
+# 查看状态
+sudo systemctl status server-monitor
+
+# 查看日志
+sudo journalctl -u server-monitor -f
+```
+
+### 方式四：Nginx 反向代理
+
+配置 Nginx 反向代理以支持域名访问和 HTTPS：
+
+```bash
+# 复制配置文件
+sudo cp deploy/nginx.conf /etc/nginx/sites-available/server-monitor
+
+# 修改配置中的域名
+sudo nano /etc/nginx/sites-available/server-monitor
+
+# 启用站点
+sudo ln -s /etc/nginx/sites-available/server-monitor /etc/nginx/sites-enabled/
+
+# 测试配置
+sudo nginx -t
+
+# 重载 Nginx
+sudo systemctl reload nginx
+```
+
+详细配置请参考 `deploy/nginx.conf` 文件。
+
+## 📁 部署文件说明
+
+```
+deploy/
+├── server-monitor.service    # systemd 服务配置
+└── nginx.conf               # Nginx 反向代理配置
+
+ecosystem.config.js          # PM2 生态配置文件
+deploy.sh                    # 一键部署脚本
 ```
 
 ## 📝 注意事项

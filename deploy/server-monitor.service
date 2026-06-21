@@ -1,0 +1,23 @@
+[Unit]
+Description=Server Monitor - 服务器监控系统
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/server-monitor/backend
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=10
+Environment=PORT=3000
+Environment=NODE_ENV=production
+
+# 安全配置
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/opt/server-monitor
+
+[Install]
+WantedBy=multi-user.target
