@@ -42,6 +42,23 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // 服务器状态
   updateServerStatus: (status) => ipcRenderer.invoke('update-server-status', status),
   
+  // 多服务器管理
+  getServers: () => ipcRenderer.invoke('get-servers'),
+  addServer: (server) => ipcRenderer.invoke('add-server', server),
+  updateServer: (id, updates) => ipcRenderer.invoke('update-server', id, updates),
+  deleteServer: (id) => ipcRenderer.invoke('delete-server', id),
+  getServerGroups: () => ipcRenderer.invoke('get-server-groups'),
+  checkServerStatus: (serverId) => ipcRenderer.invoke('check-server-status', serverId),
+  checkAllServersStatus: () => ipcRenderer.invoke('check-all-servers-status'),
+  getCurrentServer: () => ipcRenderer.invoke('get-current-server'),
+  setCurrentServer: (serverId) => ipcRenderer.invoke('set-current-server', serverId),
+  connectServer: (serverId) => ipcRenderer.invoke('connect-server', serverId),
+  
+  // 服务器列表更新监听
+  onServersUpdate: (callback) => {
+    ipcRenderer.on('servers-update', (event, data) => callback(data));
+  },
+  
   // 平台信息
   platform: process.platform,
   

@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>服务器管理 - 服务器监控系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .back-btn {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .header h1 {
+            font-size: 22px;
+            font-weight: 700;
+            background: linear-gradient(90deg, #00d4ff, #7b2cbf);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .header-right {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+            color: #fff;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 212, 255, 0.3);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #fff;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .btn-danger {
+            background: rgba(255, 82, 82, 0.2);
+            border: 1px solid rgba(255, 82, 82, 0.3);
+            color: #ff5252;
+        }
+        
+        .btn-danger:hover {
+            background: rgba(255, 82, 82, 0.3);
+        }
+        
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 6px;
+        }
+        
+        /* 服务器卡片 */
+        .server-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        .server-group {
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .group-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .group-title .icon {
+            font-size: 16px;
+        }
+        
+        .server-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 12px;
+        }
+        
+        .server-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 16px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .server-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(0, 212, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .server-card.current {
+            border-color: rgba(0, 212, 255, 0.5);
+            background: rgba(0, 212, 255, 0.08);
+        }
+        
+        .server-card-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        
+        .server-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: #fff;
+        }
+        
+        .status-badge {
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        
+        .status-online {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4caf50;
+            border: 1px solid rgba(76, 175, 80, 0.3);
+        }
+        
+        .status-offline {
+            background: rgba(255, 82, 82, 0.2);
+            color: #ff5252;
+            border: 1px solid rgba(255, 82, 82, 0.3);
+        }
+        
+        .status-warning {
+            background: rgba(255, 193, 7, 0.2);
+            color: #ffc107;
+            border: 1px solid rgba(255, 193, 7, 0.3);
+        }
+        
+        .status-unknown {
+            background: rgba(158, 158, 158, 0.2);
+            color: #9e9e9e;
+            border: 1px solid rgba(158, 158, 158, 0.3);
+        }
+        
+        .server-url {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 12px;
+            word-break: break-all;
+        }
+        
+        .server-actions {
+            display: flex;
+            gap: 6px;
+        }
+        
+        .server-actions .btn {
+            flex: 1;
+            justify-content: center;
+        }
+        
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px dashed rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+        }
+        
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+        
+        .empty-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 8px;
+        }
+        
+        .empty-desc {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 20px;
+        }
+        
+        /* 模态框 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .modal {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 28px;
+            width: 90%;
+            max-width: 480px;
+            transform: scale(0.9);
+            transition: all 0.3s ease;
+        }
+        
+        .modal-overlay.show .modal {
+            transform: scale(1);
+        }
+        
+        .modal-header {
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #fff;
+        }
+        
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        .form-group label {
+            display: block;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 13px;
+            outline: none;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: rgba(0, 212, 255, 0.5);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+        }
+        
+        .form-group input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 24px;
+        }
+        
+        .current-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 2px 6px;
+            background: rgba(0, 212, 255, 0.2);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 6px;
+            font-size: 10px;
+            color: #00d4ff;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <button class="back-btn" id="backBtn">← 返回</button>
+                <h1>🖥️ 服务器管理</h1>
+            </div>
+            <div class="header-right">
+                <button class="btn btn-secondary" id="refreshBtn">
+                    🔄 刷新状态
+                </button>
+                <button class="btn btn-primary" id="addServerBtn">
+                    ➕ 添加服务器
+                </button>
+            </div>
+        </div>
+        
+        <div id="serverList" class="server-list">
+            <!-- 服务器列表将通过 JS 动态生成 -->
+        </div>
+    </div>
+    
+    <!-- 添加/编辑服务器模态框 -->
+    <div class="modal-overlay" id="serverModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">添加服务器</h2>
+            </div>
+            
+            <form id="serverForm">
+                <div class="form-group">
+                    <label for="serverName">服务器名称</label>
+                    <input type="text" id="serverName" placeholder="例如：生产服务器" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="serverUrl">服务器地址</label>
+                    <input type="text" id="serverUrl" placeholder="例如：http://192.168.1.100:3000" required>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="serverGroup">分组</label>
+                        <input type="text" id="serverGroup" placeholder="例如：生产环境" list="groupList">
+                        <datalist id="groupList"></datalist>
+                    </div>
+                    <div class="form-group">
+                        <label for="serverUsername">用户名（可选）</label>
+                        <input type="text" id="serverUsername" placeholder="admin">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="serverPassword">密码（可选）</label>
+                    <input type="password" id="serverPassword" placeholder="••••••••">
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="cancelBtn">取消</button>
+                    <button type="submit" class="btn btn-primary" id="saveBtn">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        const isDesktop = window.electronAPI && window.electronAPI.isDesktop;
+        
+        // DOM 元素
+        const serverList = document.getElementById('serverList');
+        const addServerBtn = document.getElementById('addServerBtn');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const backBtn = document.getElementById('backBtn');
+        const serverModal = document.getElementById('serverModal');
+        const serverForm = document.getElementById('serverForm');
+        const modalTitle = document.getElementById('modalTitle');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const groupList = document.getElementById('groupList');
+        
+        // 状态
+        let servers = [];
+        let currentServerId = null;
+        let editingServerId = null;
+        
+        // 加载服务器列表
+        async function loadServers() {
+            if (!isDesktop || !window.electronAPI.getServers) return;
+            
+            const result = await window.electronAPI.getServers();
+            if (result.success) {
+                servers = result.servers;
+            }
+            
+            // 获取当前服务器
+            const currentResult = await window.electronAPI.getCurrentServer();
+            if (currentResult.success) {
+                currentServerId = currentResult.serverId;
+            }
+            
+            renderServers();
+        }
+        
+        // 渲染服务器列表
+        function renderServers() {
+            if (servers.length === 0) {
+                serverList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">🖥️</div>
+                        <div class="empty-title">还没有添加服务器</div>
+                        <div class="empty-desc">点击右上角的"添加服务器"按钮开始添加</div>
+                        <button class="btn btn-primary" onclick="openAddModal()">
+                            ➕ 添加第一个服务器
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            // 按分组
+            const groups = {};
+            servers.forEach(server => {
+                const group = server.group || '默认分组';
+                if (!groups[group]) {
+                    groups[group] = [];
+                }
+                groups[group].push(server);
+            });
+            
+            let html = '';
+            for (const [groupName, groupServers] of Object.entries(groups)) {
+                html += `
+                    <div class="server-group">
+                        <div class="group-title">
+                            <span class="icon">📁</span>
+                            ${groupName}
+                            <span style="font-size: 12px; color: rgba(255,255,255,0.4); font-weight: normal;">
+                                (${groupServers.length} 台)
+                            </span>
+                        </div>
+                        <div class="server-cards">
+                            ${groupServers.map(server => renderServerCard(server)).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            serverList.innerHTML = html;
+            
+            // 绑定事件
+            bindCardEvents();
+        }
+        
+        // 渲染单个服务器卡片
+        function renderServerCard(server) {
+            const statusClass = `status-${server.status || 'unknown'}`;
+            const statusText = {
+                'online': '在线',
+                'offline': '离线',
+                'warning': '告警',
+                'unknown': '未知'
+            };
+            
+            const isCurrent = server.id === currentServerId;
+            
+            return `
+                <div class="server-card ${isCurrent ? 'current' : ''}" data-id="${server.id}">
+                    ${isCurrent ? '<div class="current-badge">当前</div>' : ''}
+                    <div class="server-card-header">
+                        <div class="server-name">${server.name}</div>
+                        <span class="status-badge ${statusClass}">${statusText[server.status || 'unknown']}</span>
+                    </div>
+                    <div class="server-url">${server.url}</div>
+                    <div class="server-actions">
+                        <button class="btn btn-primary btn-small connect-btn" data-id="${server.id}">
+                            🔗 连接
+                        </button>
+                        <button class="btn btn-secondary btn-small edit-btn" data-id="${server.id}">
+                            ✏️ 编辑
+                        </button>
+                        <button class="btn btn-danger btn-small delete-btn" data-id="${server.id}">
+                            🗑️
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 绑定卡片事件
+        function bindCardEvents() {
+            // 连接按钮
+            document.querySelectorAll('.connect-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const id = btn.dataset.id;
+                    if (isDesktop && window.electronAPI.connectServer) {
+                        await window.electronAPI.connectServer(id);
+                    }
+                });
+            });
+            
+            // 编辑按钮
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const id = btn.dataset.id;
+                    openEditModal(id);
+                });
+            });
+            
+            // 删除按钮
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const id = btn.dataset.id;
+                    if (confirm('确定要删除这个服务器吗？')) {
+                        if (isDesktop && window.electronAPI.deleteServer) {
+                            await window.electronAPI.deleteServer(id);
+                            loadServers();
+                        }
+                    }
+                });
+            });
+            
+            // 点击卡片连接
+            document.querySelectorAll('.server-card').forEach(card => {
+                card.addEventListener('click', async () => {
+                    const id = card.dataset.id;
+                    if (isDesktop && window.electronAPI.connectServer) {
+                        await window.electronAPI.connectServer(id);
+                    }
+                });
+            });
+        }
+        
+        // 打开添加模态框
+        function openAddModal() {
+            editingServerId = null;
+            modalTitle.textContent = '添加服务器';
+            serverForm.reset();
+            document.getElementById('serverGroup').value = '默认分组';
+            serverModal.classList.add('show');
+            loadGroupSuggestions();
+        }
+        
+        // 打开编辑模态框
+        function openEditModal(id) {
+            const server = servers.find(s => s.id === id);
+            if (!server) return;
+            
+            editingServerId = id;
+            modalTitle.textContent = '编辑服务器';
+            
+            document.getElementById('serverName').value = server.name;
+            document.getElementById('serverUrl').value = server.url;
+            document.getElementById('serverGroup').value = server.group || '默认分组';
+            document.getElementById('serverUsername').value = server.username || '';
+            document.getElementById('serverPassword').value = server.password || '';
+            
+            serverModal.classList.add('show');
+            loadGroupSuggestions();
+        }
+        
+        // 关闭模态框
+        function closeModal() {
+            serverModal.classList.remove('show');
+            editingServerId = null;
+        }
+        
+        // 加载分组建议
+        async function loadGroupSuggestions() {
+            if (!isDesktop || !window.electronAPI.getServerGroups) return;
+            
+            const result = await window.electronAPI.getServerGroups();
+            if (result.success) {
+                groupList.innerHTML = result.groups.map(g => `<option value="${g}">`).join('');
+            }
+        }
+        
+        // 表单提交
+        serverForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const name = document.getElementById('serverName').value.trim();
+            let url = document.getElementById('serverUrl').value.trim();
+            const group = document.getElementById('serverGroup').value.trim() || '默认分组';
+            const username = document.getElementById('serverUsername').value.trim();
+            const password = document.getElementById('serverPassword').value;
+            
+            // 自动添加 http:// 前缀
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                url = 'http://' + url;
+            }
+            
+            // 移除末尾的斜杠
+            url = url.replace(/\/+$/, '');
+            
+            if (editingServerId) {
+                // 编辑
+                if (isDesktop && window.electronAPI.updateServer) {
+                    await window.electronAPI.updateServer(editingServerId, {
+                        name,
+                        url,
+                        group,
+                        username,
+                        password
+                    });
+                }
+            } else {
+                // 添加
+                if (isDesktop && window.electronAPI.addServer) {
+                    await window.electronAPI.addServer({
+                        name,
+                        url,
+                        group,
+                        username,
+                        password
+                    });
+                }
+            }
+            
+            closeModal();
+            loadServers();
+        });
+        
+        // 刷新所有服务器状态
+        refreshBtn.addEventListener('click', async () => {
+            if (isDesktop && window.electronAPI.checkAllServersStatus) {
+                refreshBtn.textContent = '⏳ 检测中...';
+                refreshBtn.disabled = true;
+                
+                await window.electronAPI.checkAllServersStatus();
+                loadServers();
+                
+                refreshBtn.textContent = '🔄 刷新状态';
+                refreshBtn.disabled = false;
+            }
+        });
+        
+        // 添加服务器按钮
+        addServerBtn.addEventListener('click', openAddModal);
+        
+        // 取消按钮
+        cancelBtn.addEventListener('click', closeModal);
+        
+        // 返回按钮
+        backBtn.addEventListener('click', () => {
+            if (isDesktop && window.electronAPI.goConfig) {
+                window.electronAPI.goConfig();
+            }
+        });
+        
+        // 点击遮罩关闭
+        serverModal.addEventListener('click', (e) => {
+            if (e.target === serverModal) {
+                closeModal();
+            }
+        });
+        
+        // 监听服务器列表更新
+        if (isDesktop && window.electronAPI.onServersUpdate) {
+            window.electronAPI.onServersUpdate((data) => {
+                servers = data.servers;
+                currentServerId = data.currentServerId;
+                renderServers();
+            });
+        }
+        
+        // 初始化
+        loadServers();
+    </script>
+</body>
+</html>

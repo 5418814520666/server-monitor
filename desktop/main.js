@@ -58,6 +58,141 @@ const defaultConfig = {
 // 合并配置
 appConfig = { ...defaultConfig, ...appConfig };
 
+// ==================== 多服务器管理 ====================
+
+// 服务器数据存储路径
+const serversPath = path.join(app.getPath('userData'), 'servers.json');
+
+// 读取服务器列表
+function readServers() {
+  try {
+    if (fs.existsSync(serversPath)) {
+      const data = JSON.parse(fs.readFileSync(serversPath, 'utf-8'));
+      return data.servers || [];
+    }
+  } catch (e) {
+    console.error('读取服务器列表失败:', e);
+  }
+  return [];
+}
+
+// 保存服务器列表
+function saveServers(servers) {
+  try {
+    const dir = path.dirname(serversPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(serversPath, JSON.stringify({ servers }, null, 2));
+    return true;
+  } catch (e) {
+    console.error('保存服务器列表失败:', e);
+    return false;
+  }
+}
+
+// 生成唯一ID
+function generateId() {
+  return 'server-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+}
+
+// 获取所有服务器
+function getServers() {
+  return readServers();
+}
+
+// 添加服务器
+function addServer(server) {
+  const servers = readServers();
+  const newServer = {
+    id: generateId(),
+    name: server.name || '未命名服务器',
+    url: server.url,
+    group: server.group || '默认分组',
+    username: server.username || '',
+    password: server.password || '', // 注意：生产环境应该加密存储
+    status: 'unknown',
+    lastCheck: null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  servers.push(newServer);
+  saveServers(servers);
+  return newServer;
+}
+
+// 更新服务器
+function updateServer(id, updates) {
+  const servers = readServers();
+  const index = servers.findIndex(s => s.id === id);
+  if (index === -1) return null;
+  
+  servers[index] = {
+    ...servers[index],
+    ...updates,
+    updatedAt: new Date().toISOString()
+  };
+  saveServers(servers);
+  return servers[index];
+}
+
+// 删除服务器
+function deleteServer(id) {
+  const servers = readServers();
+  const filtered = servers.filter(s => s.id !== id);
+  saveServers(filtered);
+  return filtered.length < servers.length;
+}
+
+// 获取服务器分组
+function getServerGroups() {
+  const servers = readServers();
+  const groups = [...new Set(servers.map(s => s.group || '默认分组'))];
+  return groups;
+}
+
+// 检测服务器状态
+async function checkServerStatus(serverId) {
+  const servers = readServers();
+  const server = servers.find(s => s.id === serverId);
+  if (!server) return 'unknown';
+  
+  try {
+    const url = server.url.replace(/\/+$/, '') + '/api/health';
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeout);
+    
+    if (response.ok) {
+      const data = await response.json().catch(() => ({}));
+      const status = data.status === 'ok' ? 'online' : 'warning';
+      updateServer(serverId, { status, lastCheck: new Date().toISOString() });
+      return status;
+    } else {
+      updateServer(serverId, { status: 'offline', lastCheck: new Date().toISOString() });
+      return 'offline';
+    }
+  } catch (e) {
+    updateServer(serverId, { status: 'offline', lastCheck: new Date().toISOString() });
+    return 'offline';
+  }
+}
+
+// 检测所有服务器状态
+async function checkAllServersStatus() {
+  const servers = readServers();
+  const promises = servers.map(s => checkServerStatus(s.id));
+  await Promise.allSettled(promises);
+  return readServers();
+}
+
+// 当前选中的服务器ID
+let currentServerId = null;
+
+// ==================== 多服务器管理结束 ====================
+
 // 创建托盘图标（根据状态）
 function createTrayIcon(status) {
   // 使用 nativeImage 创建简单的图标
@@ -818,6 +953,113 @@ ipcMain.handle('update-server-status', (event, status) => {
   updateServerStatus(status);
   return { success: true };
 });
+
+// ==================== 多服务器管理 IPC ====================
+
+// 获取所有服务器
+ipcMain.handle('get-servers', () => {
+  return { success: true, servers: getServers() };
+});
+
+// 添加服务器
+ipcMain.handle('add-server', (event, server) => {
+  const newServer = addServer(server);
+  // 通知渲染进程服务器列表已更新
+  sendServersUpdate();
+  return { success: true, server: newServer };
+});
+
+// 更新服务器
+ipcMain.handle('update-server', (event, id, updates) => {
+  const updated = updateServer(id, updates);
+  if (updated) {
+    sendServersUpdate();
+    return { success: true, server: updated };
+  }
+  return { success: false, error: '服务器不存在' };
+});
+
+// 删除服务器
+ipcMain.handle('delete-server', (event, id) => {
+  const deleted = deleteServer(id);
+  if (deleted) {
+    sendServersUpdate();
+    // 如果删除的是当前服务器，清空当前服务器
+    if (currentServerId === id) {
+      currentServerId = null;
+    }
+    return { success: true };
+  }
+  return { success: false, error: '服务器不存在' };
+});
+
+// 获取服务器分组
+ipcMain.handle('get-server-groups', () => {
+  return { success: true, groups: getServerGroups() };
+});
+
+// 检测单个服务器状态
+ipcMain.handle('check-server-status', async (event, serverId) => {
+  const status = await checkServerStatus(serverId);
+  sendServersUpdate();
+  return { success: true, status };
+});
+
+// 检测所有服务器状态
+ipcMain.handle('check-all-servers-status', async () => {
+  const servers = await checkAllServersStatus();
+  sendServersUpdate();
+  return { success: true, servers };
+});
+
+// 获取当前选中的服务器
+ipcMain.handle('get-current-server', () => {
+  const servers = getServers();
+  const current = servers.find(s => s.id === currentServerId) || null;
+  return { success: true, server: current, serverId: currentServerId };
+});
+
+// 设置当前选中的服务器
+ipcMain.handle('set-current-server', (event, serverId) => {
+  currentServerId = serverId;
+  return { success: true, serverId: currentServerId };
+});
+
+// 连接到指定服务器
+ipcMain.handle('connect-server', (event, serverId) => {
+  const servers = getServers();
+  const server = servers.find(s => s.id === serverId);
+  
+  if (!server) {
+    return { success: false, error: '服务器不存在' };
+  }
+  
+  currentServerId = serverId;
+  
+  if (mainWindow && server.url) {
+    mainWindow.loadURL(server.url).catch((error) => {
+      console.error('加载服务器页面失败:', error);
+      updateServerStatus('offline');
+    });
+    
+    // 检测服务器状态
+    checkServerStatus(serverId);
+  }
+  
+  return { success: true, server };
+});
+
+// 发送服务器列表更新到渲染进程
+function sendServersUpdate() {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('servers-update', {
+      servers: getServers(),
+      currentServerId
+    });
+  }
+}
+
+// ==================== 多服务器管理 IPC 结束 ====================
 
 // 应用就绪
 app.whenReady().then(() => {
