@@ -32,7 +32,25 @@
 - Node.js >= 14.0.0
 - npm >= 6.0.0
 
-### 快速开始
+### 快速开始（推荐）
+
+使用一键部署脚本：
+
+```bash
+git clone <your-repo-url>
+cd server-monitor
+chmod +x deploy.sh
+./deploy.sh
+```
+
+脚本会自动检查环境、安装依赖并启动服务，还支持可选安装 PM2 进行进程管理。
+
+**指定端口启动：**
+```bash
+./deploy.sh -p 8080
+```
+
+### 手动安装
 
 1. **克隆项目**
 ```bash
@@ -72,7 +90,9 @@ server-monitor/
 │   │   └── style.css    # 样式文件
 │   └── js/
 │       └── app.js       # 前端逻辑
+├── deploy.sh            # 一键部署脚本
 ├── package.json         # 项目根配置
+├── .gitignore          # Git忽略文件
 └── README.md           # 项目说明
 ```
 
