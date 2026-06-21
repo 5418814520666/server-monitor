@@ -17,10 +17,29 @@
                     <a href="ssh.html" class="nav-link">💻 SSH 终端</a>
                 </nav>
             </div>
-            <div class="status">
-                <span class="status-dot" id="statusDot"></span>
-                <span id="statusText">连接中...</span>
-                <span class="last-update" id="lastUpdate"></span>
+            <div class="header-right">
+                <div class="user-info" id="userInfo">
+                    <div class="user-dropdown">
+                        <button class="user-dropdown-btn" id="userDropdownBtn">
+                            <span class="user-icon">👤</span>
+                            <span class="username" id="username">--</span>
+                            <span class="dropdown-arrow">▼</span>
+                        </button>
+                        <div class="user-dropdown-menu" id="userDropdownMenu">
+                            <a href="change-password.html" class="dropdown-item" id="changePasswordLink">
+                                🔐 修改密码
+                            </a>
+                            <button class="dropdown-item logout-btn" id="logoutBtn">
+                                🚪 退出登录
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="status">
+                    <span class="status-dot" id="statusDot"></span>
+                    <span id="statusText">连接中...</span>
+                    <span class="last-update" id="lastUpdate"></span>
+                </div>
             </div>
         </header>
 

@@ -1,7 +1,95 @@
+/**
+ * 服务器监控系统 - 前端主逻辑
+ */
+
 // 全局变量
 let ws;
 let cpuChart, memoryChart, networkChart;
 const maxDataPoints = 60;
+const SESSION_KEY = 'server_monitor_session';
+
+// 获取会话ID
+function getSessionId() {
+    // 优先从 URL 参数获取
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlSessionId = urlParams.get('sessionId');
+    if (urlSessionId) {
+        return urlSessionId;
+    }
+    
+    // 从 localStorage 获取
+    try {
+        const session = localStorage.getItem(SESSION_KEY);
+        if (session) {
+            return JSON.parse(session).sessionId;
+        }
+    } catch (e) {
+        // 忽略
+    }
+    
+    // 从 sessionStorage 获取
+    try {
+        const session = sessionStorage.getItem(SESSION_KEY);
+        if (session) {
+            return JSON.parse(session).sessionId;
+        }
+    } catch (e) {
+        // 忽略
+    }
+    
+    return null;
+}
+
+// 获取用户名
+function getUsername() {
+    try {
+        const session = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
+        if (session) {
+            return JSON.parse(session).username;
+        }
+    } catch (e) {
+        // 忽略
+    }
+    return null;
+}
+
+// 跳转到登录页
+function redirectToLogin() {
+    window.location.href = '/login.html';
+}
+
+// 登出
+function logout() {
+    const sessionId = getSessionId();
+    if (sessionId) {
+        fetch('/api/logout', {
+            method: 'POST',
+            headers: {
+                'X-Session-Id': sessionId
+            }
+        }).catch(() => {
+            // 忽略错误
+        });
+    }
+    
+    // 清除本地存储
+    localStorage.removeItem(SESSION_KEY);
+    sessionStorage.removeItem(SESSION_KEY);
+    
+    // 跳转到登录页
+    redirectToLogin();
+}
+
+// 检查登录状态
+function checkAuth() {
+    const sessionId = getSessionId();
+    if (!sessionId) {
+        redirectToLogin();
+        return false;
+    }
+    
+    return true;
+}
 
 // 初始化图表
 function initCharts() {
@@ -342,8 +430,14 @@ function setConnectionStatus(connected) {
 
 // 连接 WebSocket
 function connectWebSocket() {
+    const sessionId = getSessionId();
+    if (!sessionId) {
+        redirectToLogin();
+        return;
+    }
+    
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}`;
+    const wsUrl = `${protocol}//${window.location.host}?sessionId=${encodeURIComponent(sessionId)}`;
     
     ws = new WebSocket(wsUrl);
 
@@ -367,9 +461,17 @@ function connectWebSocket() {
         }
     };
 
-    ws.onclose = function() {
-        console.log('WebSocket 连接断开，正在重连...');
+    ws.onclose = function(event) {
+        console.log('WebSocket 连接断开，代码:', event.code);
         setConnectionStatus(false);
+        
+        // 如果是 401 或认证失败，跳转到登录页
+        if (event.code === 1008 || event.code === 1011) {
+            redirectToLogin();
+            return;
+        }
+        
+        // 否则尝试重连
         setTimeout(connectWebSocket, 3000);
     };
 
@@ -379,8 +481,50 @@ function connectWebSocket() {
     };
 }
 
+// 更新导航链接，添加 sessionId
+function updateNavLinks() {
+    const sessionId = getSessionId();
+    if (!sessionId) return;
+    
+    const links = document.querySelectorAll('.nav-link');
+    links.forEach(link => {
+        const href = link.getAttribute('href');
+        if (href && !href.includes('sessionId')) {
+            link.setAttribute('href', href + '?sessionId=' + encodeURIComponent(sessionId));
+        }
+    });
+}
+
+// 初始化用户信息
+function initUserInfo() {
+    const username = getUsername();
+    if (username) {
+        document.getElementById('username').textContent = username;
+    }
+    
+    // 绑定登出按钮
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', logout);
+    }
+}
+
 // 页面加载完成后初始化
 document.addEventListener('DOMContentLoaded', function() {
+    // 检查认证
+    if (!checkAuth()) {
+        return;
+    }
+    
+    // 初始化用户信息
+    initUserInfo();
+    
+    // 更新导航链接
+    updateNavLinks();
+    
+    // 初始化图表
     initCharts();
+    
+    // 连接 WebSocket
     connectWebSocket();
 });

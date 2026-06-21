@@ -10,6 +10,8 @@
 - **磁盘监控**：多磁盘分区使用情况，可视化进度条
 - **网络监控**：实时上传/下载速度，总流量统计
 - **历史数据**：自动记录最近60个数据点，展示趋势图表
+- **数据持久化**：历史数据自动保存到硬盘，重启服务不丢失
+- **用户认证**：支持用户登录认证，保护监控面板安全
 - **系统信息**：主机名、操作系统、内核版本、运行时间等
 - **SSH 终端**：内置 Web SSH 终端，支持密码和私钥认证
 - **响应式设计**：支持桌面端和移动端访问
@@ -85,18 +87,25 @@ npm run dev
 ```
 server-monitor/
 ├── backend/              # 后端服务
-│   ├── server.js        # 主服务器文件
+│   ├── server.js        # 主服务器文件（API + WebSocket + SSH + 认证 + 数据持久化）
 │   ├── ssh-handler.js   # SSH 终端处理器
 │   └── package.json     # 后端依赖配置
 ├── frontend/            # 前端页面
 │   ├── index.html       # 监控面板
 │   ├── ssh.html         # SSH 终端页面
+│   ├── login.html       # 登录页面
 │   ├── css/
 │   │   ├── style.css    # 主样式文件
-│   │   └── ssh.css      # SSH 终端样式
+│   │   ├── ssh.css      # SSH 终端样式
+│   │   └── login.css    # 登录页面样式
 │   └── js/
 │       ├── app.js       # 监控逻辑
-│       └── ssh.js       # SSH 终端逻辑
+│       ├── ssh.js       # SSH 终端逻辑
+│       └── login.js     # 登录页面逻辑
+├── data/                # 数据存储目录（运行时自动创建）
+│   ├── history.json     # 历史数据文件
+│   ├── users.json       # 用户数据文件
+│   └── sessions.json    # 会话数据文件
 ├── deploy/              # 部署配置文件
 │   ├── server-monitor.service  # systemd 服务配置
 │   └── nginx.conf       # Nginx 反向代理配置
@@ -109,25 +118,39 @@ server-monitor/
 
 ## 🔌 API 接口
 
+### 认证说明
+除登录接口和健康检查接口外，所有 API 接口和 WebSocket 连接都需要身份认证。
+
+**认证方式：**
+- REST API：在请求头中携带 `X-Session-Id`
+- WebSocket：在 URL 查询参数中携带 `sessionId`
+
+**默认账号：**
+- 用户名：`admin`
+- 密码：`admin`
+
 ### REST API
 
-| 接口 | 方法 | 说明 |
-|------|------|------|
-| `/api/info` | GET | 获取当前系统信息 |
-| `/api/history` | GET | 获取历史数据 |
-| `/api/health` | GET | 健康检查 |
+| 接口 | 方法 | 认证 | 说明 |
+|------|------|------|------|
+| `/api/login` | POST | ❌ 否 | 用户登录，获取 sessionId |
+| `/api/logout` | POST | ✅ 是 | 用户登出 |
+| `/api/auth/check` | GET | ✅ 是 | 检查登录状态 |
+| `/api/info` | GET | ✅ 是 | 获取当前系统信息 |
+| `/api/history` | GET | ✅ 是 | 获取历史数据 |
+| `/api/health` | GET | ❌ 否 | 健康检查 |
 
 ### WebSocket
 
 #### 监控 WebSocket
-连接地址：`ws://<host>:<port>`
+连接地址：`ws://<host>:<port>?sessionId=<your_session_id>`
 
 消息类型：
 - `info`：实时系统信息
 - `history`：历史数据
 
 #### SSH 终端 WebSocket
-连接地址：`ws://<host>:<port>/ssh`
+连接地址：`ws://<host>:<port>/ssh?sessionId=<your_session_id>`
 
 消息类型：
 - `connect`：建立 SSH 连接
@@ -148,6 +171,23 @@ PORT=8080 npm start
 
 ### 数据保留
 默认保留最近 60 个数据点（约2分钟），可在 `backend/server.js` 中修改 `maxPoints` 参数。
+
+### 数据持久化
+- 历史数据自动保存到 `data/history.json` 文件
+- 用户数据保存在 `data/users.json` 文件
+- 会话数据保存在 `data/sessions.json` 文件
+- 服务启动时自动加载数据，每分钟自动保存一次
+- 服务优雅退出时（Ctrl+C 或 systemd stop）自动保存数据
+
+### 会话配置
+- 默认会话有效期：24小时
+- 可在 `backend/server.js` 中修改 `SESSION_TTL` 参数
+
+### 默认账号
+- 用户名：`admin`
+- 密码：`admin`
+
+> ⚠️ **安全提示**：首次部署后请及时修改默认密码！
 
 ## 🚀 部署指南
 
@@ -260,12 +300,14 @@ deploy.sh                    # 一键部署脚本
 
 ## 📝 注意事项
 
-1. 历史数据存储在内存中，重启服务后会丢失
-2. 生产环境建议添加身份验证
+1. 历史数据自动保存到硬盘，重启服务不会丢失
+2. 默认账号为 admin/admin，生产环境请及时修改密码
 3. CPU 温度功能依赖系统支持，部分系统可能无法获取
 4. 建议在服务器上本地部署，减少网络延迟
 5. SSH 终端功能存在安全风险，生产环境请谨慎使用
 6. SSH 凭据通过 WebSocket 传输，建议使用 HTTPS 加密
+7. 会话默认有效期 24 小时，过期需要重新登录
+8. data 目录包含用户和会话数据，请注意备份和权限设置
 
 ## 🤝 贡献
 
