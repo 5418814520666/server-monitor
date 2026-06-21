@@ -81,6 +81,22 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('alarm-rules-updated', (event, data) => callback(data));
   },
   
+  // 截图功能
+  takeScreenshot: () => ipcRenderer.invoke('take-screenshot'),
+  openScreenshotsFolder: () => ipcRenderer.invoke('open-screenshots-folder'),
+  
+  // 迷你悬浮窗
+  showMiniWindow: () => ipcRenderer.invoke('show-mini-window'),
+  hideMiniWindow: () => ipcRenderer.invoke('hide-mini-window'),
+  toggleMiniWindow: () => ipcRenderer.invoke('toggle-mini-window'),
+  miniWindowShowMain: () => ipcRenderer.invoke('mini-window-show-main'),
+  moveMiniWindow: (dx, dy) => ipcRenderer.invoke('move-mini-window', dx, dy),
+  
+  // 悬浮窗数据更新监听
+  onUpdateData: (callback) => {
+    ipcRenderer.on('update-data', (event, data) => callback(data));
+  },
+  
   // 平台信息
   platform: process.platform,
   

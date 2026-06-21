@@ -1763,6 +1763,15 @@ ipcMain.handle('mini-window-show-main', () => {
   return { success: true };
 });
 
+// 移动迷你悬浮窗
+ipcMain.handle('move-mini-window', (event, dx, dy) => {
+  if (miniWindow && !miniWindow.isDestroyed()) {
+    const [x, y] = miniWindow.getPosition();
+    miniWindow.setPosition(x + dx, y + dy);
+  }
+  return { success: true };
+});
+
 // ==================== 迷你悬浮窗结束 ====================
 
 // 应用就绪
