@@ -22,6 +22,26 @@ contextBridge.exposeInMainWorld('electronAPI', {
   loadServer: (url) => ipcRenderer.invoke('load-server', url),
   goConfig: () => ipcRenderer.invoke('go-config'),
   
+  // 配置相关
+  getConfig: () => ipcRenderer.invoke('get-config'),
+  setConfig: (config) => ipcRenderer.invoke('set-config', config),
+  
+  // 配置更新监听
+  onConfigUpdate: (callback) => {
+    ipcRenderer.on('config-update', (event, data) => callback(data));
+  },
+  
+  // 窗口控制
+  toggleAlwaysOnTop: () => ipcRenderer.invoke('toggle-always-on-top'),
+  toggleAutoStart: () => ipcRenderer.invoke('toggle-auto-start'),
+  hideToTray: () => ipcRenderer.invoke('hide-to-tray'),
+  
+  // 通知
+  sendNotification: (title, body, options) => ipcRenderer.invoke('send-notification', title, body, options),
+  
+  // 服务器状态
+  updateServerStatus: (status) => ipcRenderer.invoke('update-server-status', status),
+  
   // 平台信息
   platform: process.platform,
   

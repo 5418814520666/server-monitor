@@ -16,104 +16,196 @@
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
             min-height: 100vh;
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             justify-content: center;
             color: #fff;
+            padding: 40px 20px;
         }
         
         .config-container {
-            max-width: 480px;
+            max-width: 520px;
             width: 100%;
-            padding: 40px 20px;
         }
         
         .config-card {
             background: rgba(255, 255, 255, 0.08);
             backdrop-filter: blur(20px);
             border-radius: 20px;
-            padding: 40px;
+            padding: 36px;
             border: 1px solid rgba(255, 255, 255, 0.15);
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            margin-bottom: 20px;
         }
         
         .config-header {
             text-align: center;
-            margin-bottom: 32px;
+            margin-bottom: 28px;
         }
         
         .config-icon {
-            font-size: 48px;
-            margin-bottom: 16px;
+            font-size: 42px;
+            margin-bottom: 12px;
         }
         
         .config-header h1 {
-            font-size: 24px;
+            font-size: 22px;
             font-weight: 700;
             background: linear-gradient(90deg, #00d4ff, #7b2cbf);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
         
         .config-header p {
             color: rgba(255, 255, 255, 0.6);
-            font-size: 14px;
+            font-size: 13px;
+        }
+        
+        .section-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .section-title .icon {
+            font-size: 16px;
         }
         
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 18px;
         }
         
         .form-group label {
             display: block;
             color: rgba(255, 255, 255, 0.8);
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 500;
             margin-bottom: 8px;
         }
         
-        .form-group input {
+        .form-group input[type="text"] {
             width: 100%;
-            padding: 12px 16px;
+            padding: 11px 14px;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 10px;
             color: #fff;
-            font-size: 14px;
+            font-size: 13px;
             outline: none;
             transition: all 0.3s ease;
             box-sizing: border-box;
         }
         
-        .form-group input:focus {
+        .form-group input[type="text"]:focus {
             border-color: rgba(0, 212, 255, 0.5);
             background: rgba(255, 255, 255, 0.08);
             box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
         }
         
-        .form-group input::placeholder {
+        .form-group input[type="text"]::placeholder {
             color: rgba(255, 255, 255, 0.4);
         }
         
         .form-hint {
-            font-size: 12px;
+            font-size: 11px;
             color: rgba(255, 255, 255, 0.4);
-            margin-top: 6px;
+            margin-top: 5px;
+        }
+        
+        /* 开关样式 */
+        .switch-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        
+        .switch-item:last-child {
+            border-bottom: none;
+        }
+        
+        .switch-label {
+            flex: 1;
+        }
+        
+        .switch-label .title {
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 2px;
+        }
+        
+        .switch-label .desc {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.45);
+        }
+        
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+            flex-shrink: 0;
+        }
+        
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.15);
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(20px);
         }
         
         .save-btn {
             width: 100%;
-            padding: 14px;
+            padding: 13px;
             background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
             border: none;
             border-radius: 10px;
             color: #fff;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            margin-top: 8px;
+            margin-top: 6px;
         }
         
         .save-btn:hover {
@@ -127,11 +219,11 @@
         
         .version-info {
             text-align: center;
-            margin-top: 24px;
-            padding-top: 20px;
+            margin-top: 20px;
+            padding-top: 16px;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
             color: rgba(255, 255, 255, 0.4);
-            font-size: 12px;
+            font-size: 11px;
         }
         
         .update-badge {
@@ -141,7 +233,7 @@
             border: 1px solid rgba(0, 212, 255, 0.3);
             border-radius: 20px;
             color: #00d4ff;
-            font-size: 11px;
+            font-size: 10px;
             margin-left: 8px;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -150,10 +242,45 @@
         .update-badge:hover {
             background: rgba(0, 212, 255, 0.3);
         }
+        
+        .shortcut-input {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .shortcut-input input {
+            flex: 1;
+        }
+        
+        .shortcut-btn {
+            padding: 11px 14px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+        
+        .shortcut-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .settings-section {
+            margin-bottom: 24px;
+        }
+        
+        .settings-section:last-child {
+            margin-bottom: 0;
+        }
     </style>
 </head>
 <body>
     <div class="config-container">
+        <!-- 服务器配置 -->
         <div class="config-card">
             <div class="config-header">
                 <div class="config-icon">🖥️</div>
@@ -162,22 +289,124 @@
             </div>
             
             <form id="configForm">
-                <div class="form-group">
-                    <label for="serverUrl">服务器地址</label>
-                    <input type="text" id="serverUrl" placeholder="例如: http://192.168.1.100:3000" required>
-                    <div class="form-hint">请输入服务器监控系统的访问地址</div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="serverName">服务器名称（可选）</label>
-                    <input type="text" id="serverName" placeholder="例如: 生产服务器">
-                    <div class="form-hint">给这个服务器起个名字，方便识别</div>
+                <div class="settings-section">
+                    <div class="section-title">
+                        <span class="icon">🌐</span>
+                        服务器配置
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="serverUrl">服务器地址</label>
+                        <input type="text" id="serverUrl" placeholder="例如: http://192.168.1.100:3000" required>
+                        <div class="form-hint">请输入服务器监控系统的访问地址</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="serverName">服务器名称（可选）</label>
+                        <input type="text" id="serverName" placeholder="例如: 生产服务器">
+                        <div class="form-hint">给这个服务器起个名字，方便识别</div>
+                    </div>
                 </div>
                 
                 <button type="submit" class="save-btn">
                     保存并连接
                 </button>
             </form>
+        </div>
+        
+        <!-- 客户端设置 -->
+        <div class="config-card">
+            <div class="settings-section">
+                <div class="section-title">
+                    <span class="icon">⚙️</span>
+                    客户端设置
+                </div>
+                
+                <div class="switch-item">
+                    <div class="switch-label">
+                        <div class="title">开机自启动</div>
+                        <div class="desc">系统启动时自动运行监控客户端</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="autoStart">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div class="switch-item">
+                    <div class="switch-label">
+                        <div class="title">桌面通知</div>
+                        <div class="desc">服务器异常或更新时推送系统通知</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="enableNotifications">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div class="switch-item">
+                    <div class="switch-label">
+                        <div class="title">关闭时最小化到托盘</div>
+                        <div class="desc">点击关闭按钮不退出程序，最小化到系统托盘</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="closeToTray">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div class="switch-item">
+                    <div class="switch-label">
+                        <div class="title">最小化时到托盘</div>
+                        <div class="desc">点击最小化按钮时隐藏到系统托盘</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="minimizeToTray">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div class="switch-item">
+                    <div class="switch-label">
+                        <div class="title">窗口置顶</div>
+                        <div class="desc">监控窗口始终显示在最前面</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="alwaysOnTop">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 快捷键设置 -->
+        <div class="config-card">
+            <div class="settings-section">
+                <div class="section-title">
+                    <span class="icon">⌨️</span>
+                    快捷键设置
+                </div>
+                
+                <div class="switch-item">
+                    <div class="switch-label">
+                        <div class="title">启用全局快捷键</div>
+                        <div class="desc">使用快捷键快速调出/隐藏监控窗口</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="enableGlobalShortcut">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div class="form-group" style="margin-top: 16px;">
+                    <label for="globalShortcut">显示/隐藏窗口快捷键</label>
+                    <div class="shortcut-input">
+                        <input type="text" id="globalShortcut" placeholder="例如: Ctrl+Shift+M">
+                        <button type="button" class="shortcut-btn" id="testShortcutBtn">测试</button>
+                    </div>
+                    <div class="form-hint">支持 Ctrl、Shift、Alt 组合键，例如 Ctrl+Shift+M</div>
+                </div>
+            </div>
             
             <div class="version-info">
                 <span id="versionText">版本 v1.0.0</span>
@@ -185,7 +414,7 @@
             </div>
         </div>
     </div>
-
+    
     <script>
         // 检查是否为桌面端
         const isDesktop = window.electronAPI && window.electronAPI.isDesktop;
@@ -197,8 +426,18 @@
         const versionText = document.getElementById('versionText');
         const checkUpdateBtn = document.getElementById('checkUpdateBtn');
         
-        // 加载已保存的配置
-        function loadConfig() {
+        // 设置开关
+        const autoStartSwitch = document.getElementById('autoStart');
+        const enableNotificationsSwitch = document.getElementById('enableNotifications');
+        const closeToTraySwitch = document.getElementById('closeToTray');
+        const minimizeToTraySwitch = document.getElementById('minimizeToTray');
+        const alwaysOnTopSwitch = document.getElementById('alwaysOnTop');
+        const enableGlobalShortcutSwitch = document.getElementById('enableGlobalShortcut');
+        const globalShortcutInput = document.getElementById('globalShortcut');
+        const testShortcutBtn = document.getElementById('testShortcutBtn');
+        
+        // 加载已保存的服务器配置
+        function loadServerConfig() {
             const savedUrl = localStorage.getItem('server_url') || '';
             const savedName = localStorage.getItem('server_name') || '';
             
@@ -210,10 +449,46 @@
             }
         }
         
-        // 保存配置
-        function saveConfig(url, name) {
+        // 保存服务器配置
+        function saveServerConfig(url, name) {
             localStorage.setItem('server_url', url);
             localStorage.setItem('server_name', name || '');
+        }
+        
+        // 加载客户端配置
+        function loadClientConfig() {
+            if (!isDesktop || !window.electronAPI.getConfig) return;
+            
+            window.electronAPI.getConfig().then((config) => {
+                if (config) {
+                    autoStartSwitch.checked = config.autoStart || false;
+                    enableNotificationsSwitch.checked = config.enableNotifications !== false;
+                    closeToTraySwitch.checked = config.closeToTray !== false;
+                    minimizeToTraySwitch.checked = config.minimizeToTray !== false;
+                    alwaysOnTopSwitch.checked = config.alwaysOnTop || false;
+                    enableGlobalShortcutSwitch.checked = config.enableGlobalShortcut !== false;
+                    globalShortcutInput.value = config.globalShortcut || 'Ctrl+Shift+M';
+                }
+            });
+        }
+        
+        // 保存客户端配置
+        function saveClientConfig() {
+            if (!isDesktop || !window.electronAPI.setConfig) return;
+            
+            const config = {
+                autoStart: autoStartSwitch.checked,
+                enableNotifications: enableNotificationsSwitch.checked,
+                closeToTray: closeToTraySwitch.checked,
+                minimizeToTray: minimizeToTraySwitch.checked,
+                alwaysOnTop: alwaysOnTopSwitch.checked,
+                enableGlobalShortcut: enableGlobalShortcutSwitch.checked,
+                globalShortcut: globalShortcutInput.value.trim() || 'Ctrl+Shift+M'
+            };
+            
+            window.electronAPI.setConfig(config).then((result) => {
+                console.log('配置已保存:', result);
+            });
         }
         
         // 跳转到监控页面
@@ -245,11 +520,48 @@
             // 移除末尾的斜杠
             serverUrl = serverUrl.replace(/\/+$/, '');
             
-            // 保存配置
-            saveConfig(serverUrl, serverName);
+            // 保存服务器配置
+            saveServerConfig(serverUrl, serverName);
+            
+            // 保存客户端配置
+            saveClientConfig();
             
             // 跳转到监控页面
             goToMonitor();
+        });
+        
+        // 开关变化时保存配置
+        const switches = [
+            autoStartSwitch,
+            enableNotificationsSwitch,
+            closeToTraySwitch,
+            minimizeToTraySwitch,
+            alwaysOnTopSwitch,
+            enableGlobalShortcutSwitch
+        ];
+        
+        switches.forEach((sw) => {
+            sw.addEventListener('change', () => {
+                saveClientConfig();
+            });
+        });
+        
+        // 快捷键输入变化时保存
+        globalShortcutInput.addEventListener('blur', () => {
+            saveClientConfig();
+        });
+        
+        // 测试快捷键按钮
+        testShortcutBtn.addEventListener('click', () => {
+            if (isDesktop && window.electronAPI.sendNotification) {
+                window.electronAPI.sendNotification(
+                    '快捷键测试',
+                    '快捷键设置成功！按下快捷键试试吧~'
+                );
+                alert('已发送测试通知，请查看系统通知');
+            } else {
+                alert('当前环境不支持通知功能');
+            }
         });
         
         // 检查更新
@@ -280,6 +592,21 @@
             });
         }
         
+        // 监听配置更新
+        if (isDesktop && window.electronAPI.onConfigUpdate) {
+            window.electronAPI.onConfigUpdate((config) => {
+                console.log('配置已更新:', config);
+                // 同步 UI 状态
+                autoStartSwitch.checked = config.autoStart || false;
+                enableNotificationsSwitch.checked = config.enableNotifications !== false;
+                closeToTraySwitch.checked = config.closeToTray !== false;
+                minimizeToTraySwitch.checked = config.minimizeToTray !== false;
+                alwaysOnTopSwitch.checked = config.alwaysOnTop || false;
+                enableGlobalShortcutSwitch.checked = config.enableGlobalShortcut !== false;
+                globalShortcutInput.value = config.globalShortcut || 'Ctrl+Shift+M';
+            });
+        }
+        
         // 获取版本号
         if (isDesktop && window.electronAPI.getVersion) {
             window.electronAPI.getVersion().then((result) => {
@@ -288,7 +615,8 @@
         }
         
         // 初始化
-        loadConfig();
+        loadServerConfig();
+        loadClientConfig();
     </script>
 </body>
 </html>
