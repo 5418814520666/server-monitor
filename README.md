@@ -54,7 +54,7 @@ chmod +x deploy.sh
 
 1. **克隆项目**
 ```bash
-git clone <github.com/5418814520666/server-monitor/blob/main/deploy.sh>
+git clone <https://github.com/5418814520666/server-monitor.git>
 cd server-monitor
 ```
 
