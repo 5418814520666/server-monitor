@@ -55,7 +55,9 @@ const defaultConfig = {
   globalShortcut: 'Ctrl+Shift+M',
   enableGlobalShortcut: true,
   theme: 'dark', // dark, light, auto
-  language: 'zh-CN' // zh-CN, en-US
+  language: 'zh-CN', // zh-CN, en-US
+  homePage: 'servers', // servers, last, mini
+  lastServerId: null // 上次访问的服务器ID
 };
 
 // 合并配置

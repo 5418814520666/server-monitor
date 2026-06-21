@@ -1430,6 +1430,16 @@
                             </select>
                             <div class="form-hint">选择客户端界面的显示语言</div>
                         </div>
+                        
+                        <div class="form-group" style="margin-top: 16px;">
+                            <label for="homePageSelect">启动页面</label>
+                            <select id="homePageSelect" class="form-control">
+                                <option value="servers">服务器列表</option>
+                                <option value="last">上次访问的服务器</option>
+                                <option value="mini">迷你悬浮窗</option>
+                            </select>
+                            <div class="form-hint">选择客户端启动时显示的页面</div>
+                        </div>
                     </div>
                 </div>
                 
@@ -2910,6 +2920,7 @@
                 document.getElementById('globalShortcut').value = config.globalShortcut || 'Ctrl+Shift+M';
                 document.getElementById('themeSelect').value = config.theme || 'dark';
                 document.getElementById('languageSelect').value = config.language || 'zh-CN';
+                document.getElementById('homePageSelect').value = config.homePage || 'servers';
                 
                 // 应用主题
                 applyTheme(config.theme || 'dark');
@@ -3031,6 +3042,17 @@
                     applyLanguage();
                 } catch (err) {
                     console.error('更新语言失败:', err);
+                }
+            });
+            
+            // 启动页面切换
+            document.getElementById('homePageSelect')?.addEventListener('change', async (e) => {
+                if (!isDesktop || !window.electronAPI.setConfig) return;
+                
+                try {
+                    await window.electronAPI.setConfig({ homePage: e.target.value });
+                } catch (err) {
+                    console.error('更新启动页面失败:', err);
                 }
             });
             
