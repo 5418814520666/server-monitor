@@ -16,6 +16,8 @@
 - **SSH 终端**：内置 Web SSH 终端，支持密码和私钥认证
 - **响应式设计**：支持桌面端和移动端访问
 - **现代化 UI**：深色主题，玻璃拟态设计风格
+- **音乐播放**：内置网易云音乐播放器，支持搜索、播放、歌词显示
+- **桌面客户端**：Windows 桌面客户端，支持自动更新、系统托盘、原生体验
 
 ## 🛠️ 技术栈
 
@@ -30,6 +32,11 @@
 - Chart.js (图表可视化)
 - xterm.js (终端组件)
 - WebSocket 实时通信
+
+### 桌面客户端
+- Electron 28 (跨平台桌面应用框架)
+- electron-builder (打包工具)
+- 深色玻璃拟态 UI 设计
 
 ## 📦 安装与使用
 
@@ -87,21 +94,38 @@ npm run dev
 ```
 server-monitor/
 ├── backend/              # 后端服务
-│   ├── server.js        # 主服务器文件（API + WebSocket + SSH + 认证 + 数据持久化）
+│   ├── server.js        # 主服务器文件（API + WebSocket + SSH + 认证 + 数据持久化 + 音乐API）
 │   ├── ssh-handler.js   # SSH 终端处理器
 │   └── package.json     # 后端依赖配置
 ├── frontend/            # 前端页面
 │   ├── index.html       # 监控面板
 │   ├── ssh.html         # SSH 终端页面
 │   ├── login.html       # 登录页面
+│   ├── music.html       # 音乐播放器页面
 │   ├── css/
 │   │   ├── style.css    # 主样式文件
 │   │   ├── ssh.css      # SSH 终端样式
-│   │   └── login.css    # 登录页面样式
+│   │   ├── login.css    # 登录页面样式
+│   │   └── music.css    # 音乐播放器样式
 │   └── js/
 │       ├── app.js       # 监控逻辑
 │       ├── ssh.js       # SSH 终端逻辑
-│       └── login.js     # 登录页面逻辑
+│       ├── login.js     # 登录页面逻辑
+│       └── music.js     # 音乐播放器逻辑
+├── desktop-client/      # Windows 桌面客户端
+│   ├── main.js          # Electron 主进程
+│   ├── preload.js       # 预加载脚本
+│   ├── package.json     # 桌面客户端配置
+│   ├── README.md        # 桌面客户端说明文档
+│   ├── assets/          # 资源文件
+│   │   └── icon.svg     # 应用图标
+│   └── renderer/        # 渲染进程
+│       ├── index.html   # 主页面
+│       ├── about.html   # 关于页面
+│       ├── css/
+│       │   └── style.css
+│       └── js/
+│           └── app.js
 ├── data/                # 数据存储目录（运行时自动创建）
 │   ├── history.json     # 历史数据文件
 │   ├── users.json       # 用户数据文件
@@ -286,6 +310,42 @@ sudo systemctl reload nginx
 ```
 
 详细配置请参考 `deploy/nginx.conf` 文件。
+
+## 💻 桌面客户端
+
+项目提供了基于 Electron 开发的 Windows 桌面客户端，支持系统托盘运行和多服务器管理。
+
+### 功能特性
+
+- 🖥️ **多服务器管理**：支持添加、编辑、删除多个服务器
+- 📊 **实时监控**：内嵌完整的 Web 监控面板
+- 🔔 **系统托盘**：最小化到托盘，后台运行
+- ⚡ **自动连接**：启动时自动连接指定服务器
+- 🎨 **深色主题**：与 Web 版一致的玻璃拟态设计
+- 🔄 **状态检测**：自动检测服务器在线状态
+
+### 快速开始
+
+```bash
+# 进入桌面客户端目录
+cd desktop-client
+
+# 安装依赖
+npm install
+
+# 开发模式运行
+npm run dev
+
+# 打包生成安装包
+npm run build:win
+```
+
+### 打包产物
+
+- **NSIS 安装包**：标准 Windows 安装程序，支持自定义安装目录
+- **Portable 便携版**：单文件 exe，无需安装，可直接运行
+
+详细说明请参考 [desktop-client/README.md](desktop-client/README.md)。
 
 ## 📁 部署文件说明
 

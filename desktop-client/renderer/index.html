@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>服务器监控系统 - 桌面客户端</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- 侧边栏 -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <span class="logo-icon">🖥️</span>
+                    <span class="logo-text">服务器监控</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">服务器列表</div>
+                    <div class="server-list" id="serverList">
+                        <!-- 服务器列表动态生成 -->
+                    </div>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="add-server-btn" id="addServerBtn">
+                    <span>➕</span>
+                    <span>添加服务器</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <!-- 欢迎页面 -->
+            <div class="welcome-page" id="welcomePage">
+                <div class="welcome-content">
+                    <div class="welcome-icon">🖥️</div>
+                    <h1>欢迎使用服务器监控系统</h1>
+                    <p class="welcome-desc">Windows 桌面客户端</p>
+                    <div class="welcome-features">
+                        <div class="feature-item">
+                            <span class="feature-icon">📊</span>
+                            <span>实时监控服务器状态</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-icon">💻</span>
+                            <span>内置 SSH 终端</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-icon">🎵</span>
+                            <span>音乐播放功能</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-icon">🔔</span>
+                            <span>系统托盘运行</span>
+                        </div>
+                    </div>
+                    <button class="primary-btn" id="welcomeAddBtn">
+                        添加服务器开始使用
+                    </button>
+                </div>
+            </div>
+
+            <!-- 监控页面（iframe） -->
+            <div class="monitor-page" id="monitorPage" style="display: none;">
+                <div class="monitor-header">
+                    <div class="server-info">
+                        <span class="server-name" id="currentServerName">--</span>
+                        <span class="server-status" id="currentServerStatus">--</span>
+                    </div>
+                    <div class="monitor-actions">
+                        <button class="action-btn" id="refreshBtn" title="刷新">
+                            🔄
+                        </button>
+                        <button class="action-btn" id="backBtn" title="返回列表">
+                            ← 返回
+                        </button>
+                    </div>
+                </div>
+                <iframe id="monitorFrame" class="monitor-frame" src=""></iframe>
+            </div>
+        </main>
+    </div>
+
+    <!-- 添加服务器弹窗 -->
+    <div class="modal" id="addServerModal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>添加服务器</h2>
+                <button class="close-btn" id="closeModalBtn">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="serverForm">
+                    <div class="form-group">
+                        <label for="serverName">服务器名称</label>
+                        <input type="text" id="serverName" placeholder="例如：我的服务器" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="serverUrl">服务器地址</label>
+                        <input type="text" id="serverUrl" placeholder="例如：http://192.168.1.100:3000" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="serverUsername">用户名</label>
+                        <input type="text" id="serverUsername" placeholder="默认：admin" value="admin">
+                    </div>
+                    <div class="form-group">
+                        <label for="serverPassword">密码</label>
+                        <input type="password" id="serverPassword" placeholder="输入密码">
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="autoConnect">
+                            <span>启动时自动连接</span>
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="secondary-btn" id="cancelBtn">取消</button>
+                <button class="primary-btn" id="saveBtn">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
