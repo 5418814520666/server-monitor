@@ -1652,6 +1652,348 @@
         let alarmLogs = [];
         let currentPage = 'servers';
         
+        // 多语言翻译
+        const translations = {
+            'zh-CN': {
+                // 侧边栏
+                'sidebar.servers': '服务器管理',
+                'sidebar.alarmRules': '告警规则',
+                'sidebar.alarmLogs': '告警日志',
+                'sidebar.history': '历史记录',
+                'sidebar.settings': '客户端设置',
+                'sidebar.about': '关于',
+                
+                // 服务器管理
+                'servers.title': '服务器管理',
+                'servers.subtitle': '管理所有监控的服务器',
+                'servers.refresh': '🔄 刷新状态',
+                'servers.add': '➕ 添加服务器',
+                'servers.export': '📥 导出配置',
+                'servers.empty': '还没有添加服务器',
+                'servers.emptyDesc': '点击上方"添加服务器"按钮开始添加你的第一台服务器',
+                'servers.addNow': '立即添加',
+                'servers.connect': '连接',
+                'servers.edit': '编辑',
+                'servers.delete': '删除',
+                'servers.ssh': '🔑 SSH',
+                'servers.statusOnline': '在线',
+                'servers.statusOffline': '离线',
+                'servers.statusWarning': '告警',
+                'servers.statusUnknown': '未知',
+                'servers.groupDefault': '默认分组',
+                'servers.status': '状态',
+                'servers.lastCheck': '检测时间',
+                
+                // 添加/编辑服务器模态框
+                'serverModal.addTitle': '添加服务器',
+                'serverModal.editTitle': '编辑服务器',
+                'serverModal.name': '服务器名称',
+                'serverModal.namePlaceholder': '例如：生产服务器',
+                'serverModal.url': '服务器地址',
+                'serverModal.urlPlaceholder': '例如：http://192.168.1.100:3000',
+                'serverModal.group': '分组',
+                'serverModal.groupPlaceholder': '例如：生产环境',
+                'serverModal.username': '用户名',
+                'serverModal.usernamePlaceholder': '登录用户名',
+                'serverModal.password': '密码',
+                'serverModal.passwordPlaceholder': '登录密码',
+                'serverModal.sshEnabled': '启用 SSH 连接',
+                'serverModal.sshHost': 'SSH 主机',
+                'serverModal.sshHostPlaceholder': 'SSH 服务器地址',
+                'serverModal.sshPort': 'SSH 端口',
+                'serverModal.sshPortPlaceholder': '默认 22',
+                'serverModal.sshUsername': 'SSH 用户名',
+                'serverModal.sshUsernamePlaceholder': 'SSH 登录用户名',
+                'serverModal.sshPassword': 'SSH 密码',
+                'serverModal.sshPasswordPlaceholder': 'SSH 登录密码',
+                'serverModal.cancel': '取消',
+                'serverModal.save': '保存',
+                
+                // 告警规则
+                'alarmRules.title': '告警规则',
+                'alarmRules.subtitle': '配置服务器告警规则',
+                'alarmRules.add': '➕ 添加规则',
+                'alarmRules.empty': '还没有告警规则',
+                'alarmRules.emptyDesc': '点击上方"添加规则"按钮开始配置告警',
+                'alarmRules.addNow': '立即添加',
+                'alarmRules.edit': '编辑',
+                'alarmRules.delete': '删除',
+                'alarmRules.type': '类型',
+                'alarmRules.threshold': '阈值',
+                'alarmRules.duration': '持续时间',
+                'alarmRules.level': '级别',
+                'alarmRules.enabled': '启用',
+                
+                // 告警日志
+                'alarmLogs.title': '告警日志',
+                'alarmLogs.subtitle': '查看所有告警记录',
+                'alarmLogs.refresh': '🔄 刷新',
+                'alarmLogs.export': '📥 导出',
+                'alarmLogs.empty': '暂无告警记录',
+                'alarmLogs.emptyDesc': '当有告警触发时会显示在这里',
+                'alarmLogs.resolve': '标记已解决',
+                'alarmLogs.time': '时间',
+                'alarmLogs.server': '服务器',
+                'alarmLogs.type': '类型',
+                'alarmLogs.level': '级别',
+                'alarmLogs.message': '消息',
+                'alarmLogs.status': '状态',
+                'alarmLogs.statusPending': '未解决',
+                'alarmLogs.statusResolved': '已解决',
+                
+                // 历史记录
+                'history.title': '历史记录',
+                'history.subtitle': '查看服务器历史监控数据',
+                'history.selectServer': '选择服务器',
+                'history.timeRange': '时间范围',
+                'history.1h': '1小时',
+                'history.6h': '6小时',
+                'history.24h': '24小时',
+                'history.7d': '7天',
+                'history.30d': '30天',
+                'history.refresh': '🔄 刷新',
+                'history.export': '📥 导出',
+                'history.clear': '🗑️ 清空',
+                'history.summary': '数据概览',
+                'history.dataPoints': '数据点',
+                'history.avgCpu': '平均CPU',
+                'history.avgMemory': '平均内存',
+                'history.avgDisk': '平均磁盘',
+                'history.peakCpu': 'CPU峰值',
+                'history.peakMemory': '内存峰值',
+                'history.peakDisk': '磁盘峰值',
+                'history.earliest': '最早记录',
+                'history.latest': '最新记录',
+                'history.records': '数据记录',
+                'history.time': '时间',
+                'history.cpu': 'CPU',
+                'history.memory': '内存',
+                'history.disk': '磁盘',
+                'history.empty': '暂无历史数据',
+                'history.emptyDesc': '连接服务器后会自动记录历史数据',
+                
+                // 设置
+                'settings.title': '客户端设置',
+                'settings.subtitle': '自定义客户端行为和外观',
+                'settings.general': '通用设置',
+                'settings.autoStart': '开机自启动',
+                'settings.autoStartDesc': '系统启动时自动运行客户端',
+                'settings.notifications': '桌面通知',
+                'settings.notificationsDesc': '告警时显示桌面通知',
+                'settings.closeToTray': '关闭时最小化到托盘',
+                'settings.closeToTrayDesc': '点击关闭按钮时最小化到系统托盘',
+                'settings.minimizeToTray': '最小化时到托盘',
+                'settings.minimizeToTrayDesc': '点击最小化按钮时最小化到系统托盘',
+                'settings.alwaysOnTop': '窗口置顶',
+                'settings.alwaysOnTopDesc': '窗口始终显示在最前面',
+                'settings.globalShortcut': '全局快捷键',
+                'settings.globalShortcutDesc': '使用快捷键快速切换窗口显示',
+                'settings.shortcutKey': '快捷键',
+                'settings.appearance': '外观设置',
+                'settings.theme': '主题模式',
+                'settings.themeDark': '深色',
+                'settings.themeLight': '浅色',
+                'settings.themeAuto': '跟随系统',
+                'settings.language': '界面语言',
+                
+                // 关于
+                'about.title': '关于',
+                'about.subtitle': '服务器监控系统桌面客户端',
+                'about.version': '版本',
+                'about.checkUpdate': '检查更新',
+                'about.github': 'GitHub 仓库',
+                'about.description': '轻量级服务器监控系统，支持实时监控CPU、内存、磁盘、网络等系统资源。',
+                
+                // 通用
+                'common.loading': '加载中...',
+                'common.confirm': '确认',
+                'common.cancel': '取消',
+                'common.save': '保存',
+                'common.delete': '删除',
+                'common.edit': '编辑',
+                'common.add': '添加',
+                'common.success': '操作成功',
+                'common.error': '操作失败',
+                'common.seconds': '秒',
+                'common.minutes': '分钟',
+                'common.warning': '警告',
+                'common.critical': '严重',
+            },
+            'en-US': {
+                // Sidebar
+                'sidebar.servers': 'Servers',
+                'sidebar.alarmRules': 'Alarm Rules',
+                'sidebar.alarmLogs': 'Alarm Logs',
+                'sidebar.history': 'History',
+                'sidebar.settings': 'Settings',
+                'sidebar.about': 'About',
+                
+                // Servers
+                'servers.title': 'Server Management',
+                'servers.subtitle': 'Manage all monitored servers',
+                'servers.refresh': '🔄 Refresh',
+                'servers.add': '➕ Add Server',
+                'servers.export': '📥 Export Config',
+                'servers.empty': 'No servers yet',
+                'servers.emptyDesc': 'Click "Add Server" button above to add your first server',
+                'servers.addNow': 'Add Now',
+                'servers.connect': 'Connect',
+                'servers.edit': 'Edit',
+                'servers.delete': 'Delete',
+                'servers.ssh': '🔑 SSH',
+                'servers.statusOnline': 'Online',
+                'servers.statusOffline': 'Offline',
+                'servers.statusWarning': 'Warning',
+                'servers.statusUnknown': 'Unknown',
+                'servers.groupDefault': 'Default Group',
+                'servers.status': 'Status',
+                'servers.lastCheck': 'Last Check',
+                
+                // Server Modal
+                'serverModal.addTitle': 'Add Server',
+                'serverModal.editTitle': 'Edit Server',
+                'serverModal.name': 'Server Name',
+                'serverModal.namePlaceholder': 'e.g., Production Server',
+                'serverModal.url': 'Server URL',
+                'serverModal.urlPlaceholder': 'e.g., http://192.168.1.100:3000',
+                'serverModal.group': 'Group',
+                'serverModal.groupPlaceholder': 'e.g., Production',
+                'serverModal.username': 'Username',
+                'serverModal.usernamePlaceholder': 'Login username',
+                'serverModal.password': 'Password',
+                'serverModal.passwordPlaceholder': 'Login password',
+                'serverModal.sshEnabled': 'Enable SSH',
+                'serverModal.sshHost': 'SSH Host',
+                'serverModal.sshHostPlaceholder': 'SSH server address',
+                'serverModal.sshPort': 'SSH Port',
+                'serverModal.sshPortPlaceholder': 'Default 22',
+                'serverModal.sshUsername': 'SSH Username',
+                'serverModal.sshUsernamePlaceholder': 'SSH login username',
+                'serverModal.sshPassword': 'SSH Password',
+                'serverModal.sshPasswordPlaceholder': 'SSH login password',
+                'serverModal.cancel': 'Cancel',
+                'serverModal.save': 'Save',
+                
+                // Alarm Rules
+                'alarmRules.title': 'Alarm Rules',
+                'alarmRules.subtitle': 'Configure server alarm rules',
+                'alarmRules.add': '➕ Add Rule',
+                'alarmRules.empty': 'No alarm rules yet',
+                'alarmRules.emptyDesc': 'Click "Add Rule" button above to configure alarms',
+                'alarmRules.addNow': 'Add Now',
+                'alarmRules.edit': 'Edit',
+                'alarmRules.delete': 'Delete',
+                'alarmRules.type': 'Type',
+                'alarmRules.threshold': 'Threshold',
+                'alarmRules.duration': 'Duration',
+                'alarmRules.level': 'Level',
+                'alarmRules.enabled': 'Enabled',
+                
+                // Alarm Logs
+                'alarmLogs.title': 'Alarm Logs',
+                'alarmLogs.subtitle': 'View all alarm records',
+                'alarmLogs.refresh': '🔄 Refresh',
+                'alarmLogs.export': '📥 Export',
+                'alarmLogs.empty': 'No alarm records',
+                'alarmLogs.emptyDesc': 'Alarms will appear here when triggered',
+                'alarmLogs.resolve': 'Mark Resolved',
+                'alarmLogs.time': 'Time',
+                'alarmLogs.server': 'Server',
+                'alarmLogs.type': 'Type',
+                'alarmLogs.level': 'Level',
+                'alarmLogs.message': 'Message',
+                'alarmLogs.status': 'Status',
+                'alarmLogs.statusPending': 'Pending',
+                'alarmLogs.statusResolved': 'Resolved',
+                
+                // History
+                'history.title': 'History Records',
+                'history.subtitle': 'View server historical monitoring data',
+                'history.selectServer': 'Select Server',
+                'history.timeRange': 'Time Range',
+                'history.1h': '1 Hour',
+                'history.6h': '6 Hours',
+                'history.24h': '24 Hours',
+                'history.7d': '7 Days',
+                'history.30d': '30 Days',
+                'history.refresh': '🔄 Refresh',
+                'history.export': '📥 Export',
+                'history.clear': '🗑️ Clear',
+                'history.summary': 'Data Summary',
+                'history.dataPoints': 'Data Points',
+                'history.avgCpu': 'Avg CPU',
+                'history.avgMemory': 'Avg Memory',
+                'history.avgDisk': 'Avg Disk',
+                'history.peakCpu': 'Peak CPU',
+                'history.peakMemory': 'Peak Memory',
+                'history.peakDisk': 'Peak Disk',
+                'history.earliest': 'Earliest',
+                'history.latest': 'Latest',
+                'history.records': 'Data Records',
+                'history.time': 'Time',
+                'history.cpu': 'CPU',
+                'history.memory': 'Memory',
+                'history.disk': 'Disk',
+                'history.empty': 'No historical data',
+                'history.emptyDesc': 'Historical data will be recorded automatically after connecting',
+                
+                // Settings
+                'settings.title': 'Client Settings',
+                'settings.subtitle': 'Customize client behavior and appearance',
+                'settings.general': 'General Settings',
+                'settings.autoStart': 'Auto Start',
+                'settings.autoStartDesc': 'Automatically run client on system startup',
+                'settings.notifications': 'Desktop Notifications',
+                'settings.notificationsDesc': 'Show desktop notifications on alarms',
+                'settings.closeToTray': 'Close to Tray',
+                'settings.closeToTrayDesc': 'Minimize to system tray when clicking close button',
+                'settings.minimizeToTray': 'Minimize to Tray',
+                'settings.minimizeToTrayDesc': 'Minimize to system tray when clicking minimize button',
+                'settings.alwaysOnTop': 'Always on Top',
+                'settings.alwaysOnTopDesc': 'Window always stays on top',
+                'settings.globalShortcut': 'Global Shortcut',
+                'settings.globalShortcutDesc': 'Use shortcut to quickly toggle window',
+                'settings.shortcutKey': 'Shortcut Key',
+                'settings.appearance': 'Appearance',
+                'settings.theme': 'Theme Mode',
+                'settings.themeDark': 'Dark',
+                'settings.themeLight': 'Light',
+                'settings.themeAuto': 'System',
+                'settings.language': 'Language',
+                
+                // About
+                'about.title': 'About',
+                'about.subtitle': 'Server Monitor Desktop Client',
+                'about.version': 'Version',
+                'about.checkUpdate': 'Check Update',
+                'about.github': 'GitHub Repository',
+                'about.description': 'Lightweight server monitoring system, supports real-time monitoring of CPU, memory, disk, network and other system resources.',
+                
+                // Common
+                'common.loading': 'Loading...',
+                'common.confirm': 'Confirm',
+                'common.cancel': 'Cancel',
+                'common.save': 'Save',
+                'common.delete': 'Delete',
+                'common.edit': 'Edit',
+                'common.add': 'Add',
+                'common.success': 'Success',
+                'common.error': 'Error',
+                'common.seconds': 's',
+                'common.minutes': 'min',
+                'common.warning': 'Warning',
+                'common.critical': 'Critical',
+            }
+        };
+        
+        // 当前语言
+        let currentLanguage = 'zh-CN';
+        
+        // 翻译函数
+        function t(key) {
+            return translations[currentLanguage]?.[key] || key;
+        }
+        
         // 初始化
         async function init() {
             loadVersion();
@@ -2571,6 +2913,10 @@
                 
                 // 应用主题
                 applyTheme(config.theme || 'dark');
+                
+                // 应用语言
+                currentLanguage = config.language || 'zh-CN';
+                applyLanguage();
             } catch (e) {
                 console.error('加载配置失败:', e);
             }
@@ -2681,8 +3027,8 @@
                 
                 try {
                     await window.electronAPI.setConfig({ language: e.target.value });
-                    // 语言切换需要刷新页面才能完全生效
-                    alert('语言设置已保存，重启应用后生效');
+                    currentLanguage = e.target.value;
+                    applyLanguage();
                 } catch (err) {
                     console.error('更新语言失败:', err);
                 }
@@ -2729,6 +3075,28 @@
                     body.classList.add('theme-light');
                 }
             }
+        }
+        
+        // 应用语言
+        function applyLanguage() {
+            // 更新所有带 data-i18n 属性的元素
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (key && translations[currentLanguage]?.[key]) {
+                    el.textContent = translations[currentLanguage][key];
+                }
+            });
+            
+            // 更新所有带 data-i18n-placeholder 属性的元素
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (key && translations[currentLanguage]?.[key]) {
+                    el.placeholder = translations[currentLanguage][key];
+                }
+            });
+            
+            // 更新页面标题
+            document.title = t('servers.title') + ' - 服务器监控系统';
         }
         
         function formatTime(isoString) {
