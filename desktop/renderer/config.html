@@ -474,6 +474,27 @@
             margin-top: 6px;
         }
         
+        /* 表单分隔线 */
+        .form-divider {
+            display: flex;
+            align-items: center;
+            margin: 24px 0 20px;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 12px;
+        }
+        
+        .form-divider::before,
+        .form-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .form-divider span {
+            padding: 0 12px;
+        }
+        
         /* 开关 */
         .switch-item {
             display: flex;
@@ -769,6 +790,232 @@
                 grid-template-columns: 1fr;
             }
         }
+        
+        /* 浅色主题 */
+        body.theme-light {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 50%, #d1d9e0 100%);
+            color: #1a202c;
+        }
+        
+        body.theme-light .sidebar {
+            background: rgba(255, 255, 255, 0.8);
+            border-right-color: rgba(0, 0, 0, 0.08);
+        }
+        
+        body.theme-light .sidebar-subtitle {
+            color: rgba(0, 0, 0, 0.5);
+        }
+        
+        body.theme-light .nav-item {
+            color: rgba(0, 0, 0, 0.6);
+        }
+        
+        body.theme-light .nav-item:hover {
+            background: rgba(0, 0, 0, 0.05);
+            color: rgba(0, 0, 0, 0.8);
+        }
+        
+        body.theme-light .nav-item.active {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.15) 0%, rgba(123, 44, 191, 0.15) 100%);
+            color: #7b2cbf;
+            border-color: rgba(0, 212, 255, 0.2);
+        }
+        
+        body.theme-light .sidebar-footer {
+            color: rgba(0, 0, 0, 0.4);
+            border-top-color: rgba(0, 0, 0, 0.08);
+        }
+        
+        body.theme-light .card {
+            background: rgba(255, 255, 255, 0.9);
+            border-color: rgba(0, 0, 0, 0.08);
+        }
+        
+        body.theme-light .card-header {
+            border-bottom-color: rgba(0, 0, 0, 0.06);
+        }
+        
+        body.theme-light .page-desc {
+            color: rgba(0, 0, 0, 0.5);
+        }
+        
+        body.theme-light .btn-secondary {
+            background: rgba(0, 0, 0, 0.05);
+            color: rgba(0, 0, 0, 0.7);
+            border-color: rgba(0, 0, 0, 0.1);
+        }
+        
+        body.theme-light .btn-secondary:hover {
+            background: rgba(0, 0, 0, 0.08);
+        }
+        
+        body.theme-light .server-item {
+            background: rgba(0, 0, 0, 0.02);
+            border-color: rgba(0, 0, 0, 0.06);
+        }
+        
+        body.theme-light .server-item:hover {
+            background: rgba(0, 0, 0, 0.04);
+            border-color: rgba(0, 212, 255, 0.3);
+        }
+        
+        body.theme-light .server-url {
+            color: rgba(0, 0, 0, 0.5);
+        }
+        
+        body.theme-light .server-meta {
+            color: rgba(0, 0, 0, 0.4);
+        }
+        
+        body.theme-light .empty-state {
+            color: rgba(0, 0, 0, 0.4);
+        }
+        
+        body.theme-light .empty-state .title {
+            color: rgba(0, 0, 0, 0.6);
+        }
+        
+        body.theme-light .modal {
+            background: linear-gradient(135deg, #ffffff 0%, #f5f7fa 100%);
+            border-color: rgba(0, 0, 0, 0.1);
+        }
+        
+        body.theme-light .modal-header {
+            border-bottom-color: rgba(0, 0, 0, 0.08);
+        }
+        
+        body.theme-light .modal-close {
+            background: rgba(0, 0, 0, 0.05);
+            color: rgba(0, 0, 0, 0.5);
+        }
+        
+        body.theme-light .modal-close:hover {
+            background: rgba(0, 0, 0, 0.1);
+            color: rgba(0, 0, 0, 0.8);
+        }
+        
+        body.theme-light .form-group label {
+            color: rgba(0, 0, 0, 0.8);
+        }
+        
+        body.theme-light .form-group input[type="text"],
+        body.theme-light .form-group input[type="password"],
+        body.theme-light .form-group input[type="number"],
+        body.theme-light .form-group select,
+        body.theme-light .form-group textarea {
+            background: rgba(0, 0, 0, 0.02);
+            border-color: rgba(0, 0, 0, 0.1);
+            color: #1a202c;
+        }
+        
+        body.theme-light .form-group input:focus,
+        body.theme-light .form-group select:focus,
+        body.theme-light .form-group textarea:focus {
+            border-color: rgba(0, 212, 255, 0.5);
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+        }
+        
+        body.theme-light .form-group input::placeholder,
+        body.theme-light .form-group textarea::placeholder {
+            color: rgba(0, 0, 0, 0.3);
+        }
+        
+        body.theme-light .form-hint {
+            color: rgba(0, 0, 0, 0.4);
+        }
+        
+        body.theme-light .form-divider {
+            color: rgba(0, 0, 0, 0.4);
+        }
+        
+        body.theme-light .form-divider::before,
+        body.theme-light .form-divider::after {
+            background: rgba(0, 0, 0, 0.08);
+        }
+        
+        body.theme-light .switch-item {
+            border-bottom-color: rgba(0, 0, 0, 0.06);
+        }
+        
+        body.theme-light .switch-label .title {
+            color: rgba(0, 0, 0, 0.9);
+        }
+        
+        body.theme-light .switch-label .desc {
+            color: rgba(0, 0, 0, 0.5);
+        }
+        
+        body.theme-light .slider {
+            background-color: rgba(0, 0, 0, 0.15);
+        }
+        
+        body.theme-light .rule-item {
+            background: rgba(0, 0, 0, 0.02);
+            border-color: rgba(0, 0, 0, 0.06);
+        }
+        
+        body.theme-light .tabs {
+            background: rgba(0, 0, 0, 0.03);
+        }
+        
+        body.theme-light .tab {
+            color: rgba(0, 0, 0, 0.5);
+        }
+        
+        body.theme-light .tab:hover {
+            color: rgba(0, 0, 0, 0.8);
+        }
+        
+        body.theme-light .tab.active {
+            background: rgba(255, 255, 255, 0.9);
+            color: #1a202c;
+        }
+        
+        body.theme-light .log-item {
+            background: rgba(0, 0, 0, 0.02);
+        }
+        
+        body.theme-light .log-item.warning {
+            background: rgba(245, 158, 11, 0.05);
+        }
+        
+        body.theme-light .log-item.critical {
+            background: rgba(239, 68, 68, 0.05);
+        }
+        
+        body.theme-light .log-time {
+            color: rgba(0, 0, 0, 0.4);
+        }
+        
+        body.theme-light .log-message {
+            color: rgba(0, 0, 0, 0.7);
+        }
+        
+        body.theme-light .shortcut-btn {
+            background: rgba(0, 0, 0, 0.05);
+            border-color: rgba(0, 0, 0, 0.1);
+            color: #1a202c;
+        }
+        
+        body.theme-light .shortcut-btn:hover {
+            background: rgba(0, 0, 0, 0.08);
+        }
+        
+        body.theme-light .server-group {
+            background: rgba(123, 44, 191, 0.1);
+            color: #7b2cbf;
+        }
+        
+        body.theme-light .version-badge {
+            background: rgba(0, 212, 255, 0.1);
+            border-color: rgba(0, 212, 255, 0.2);
+            color: #0099cc;
+        }
+        
+        body.theme-light .version-badge:hover {
+            background: rgba(0, 212, 255, 0.15);
+        }
     </style>
 </head>
 <body>
@@ -1001,6 +1248,32 @@
                 
                 <div class="card" style="margin-bottom: 20px;">
                     <div class="card-header">
+                        <div class="card-title">🎨 外观设置</div>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="themeSelect">主题模式</label>
+                            <select id="themeSelect" class="form-control">
+                                <option value="dark">深色主题</option>
+                                <option value="light">浅色主题</option>
+                                <option value="auto">跟随系统</option>
+                            </select>
+                            <div class="form-hint">选择客户端界面的显示主题</div>
+                        </div>
+                        
+                        <div class="form-group" style="margin-top: 16px;">
+                            <label for="languageSelect">界面语言</label>
+                            <select id="languageSelect" class="form-control">
+                                <option value="zh-CN">简体中文</option>
+                                <option value="en-US">English</option>
+                            </select>
+                            <div class="form-hint">选择客户端界面的显示语言</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card" style="margin-bottom: 20px;">
+                    <div class="card-header">
                         <div class="card-title">⌨️ 快捷键</div>
                     </div>
                     <div class="card-body">
@@ -1087,6 +1360,45 @@
                         <label for="serverPassword">密码（可选）</label>
                         <input type="password" id="serverPassword" placeholder="留空则不保存密码">
                         <div class="form-hint">密码将保存在本地，用于自动登录</div>
+                    </div>
+                    
+                    <div class="form-divider">
+                        <span>SSH 配置</span>
+                    </div>
+                    
+                    <div class="switch-item" style="margin-bottom: 16px;">
+                        <div class="switch-label">
+                            <div class="title">启用 SSH 快捷连接</div>
+                            <div class="desc">开启后可一键连接到服务器 SSH 终端</div>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="sshEnabled" onchange="toggleSSHConfig()">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div id="sshConfigSection" style="display: none;">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="sshHost">SSH 主机</label>
+                                <input type="text" id="sshHost" placeholder="例如：192.168.1.100">
+                            </div>
+                            <div class="form-group">
+                                <label for="sshPort">端口</label>
+                                <input type="number" id="sshPort" value="22" min="1" max="65535">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="sshUsername">SSH 用户名</label>
+                            <input type="text" id="sshUsername" placeholder="例如：root">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="sshPassword">SSH 密码（可选）</label>
+                            <input type="password" id="sshPassword" placeholder="留空则连接时手动输入">
+                            <div class="form-hint">密码将保存在本地，用于自动登录</div>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -1296,6 +1608,10 @@
                     'unknown': '未知'
                 }[server.status || 'unknown'];
                 
+                const sshButton = server.sshEnabled 
+                    ? `<button class="btn btn-secondary btn-sm" onclick="connectSSH('${server.id}')" title="SSH 连接">🔑 SSH</button>`
+                    : '';
+                
                 html += `
                     <div class="server-item" onclick="connectServer('${server.id}')">
                         <div class="server-item-header">
@@ -1304,6 +1620,7 @@
                                 ${escapeHtml(server.name)}
                             </div>
                             <div class="server-actions" onclick="event.stopPropagation()">
+                                ${sshButton}
                                 <button class="btn btn-secondary btn-sm" onclick="editServer('${server.id}')">编辑</button>
                                 <button class="btn btn-danger btn-sm" onclick="deleteServer('${server.id}')">删除</button>
                             </div>
@@ -1333,6 +1650,13 @@
             });
         }
         
+        // 切换 SSH 配置显示
+        function toggleSSHConfig() {
+            const enabled = document.getElementById('sshEnabled').checked;
+            const section = document.getElementById('sshConfigSection');
+            section.style.display = enabled ? 'block' : 'none';
+        }
+        
         // 连接服务器
         async function connectServer(serverId) {
             if (!isDesktop || !window.electronAPI.connectServer) return;
@@ -1347,6 +1671,21 @@
             }
         }
         
+        // SSH 快速连接
+        async function connectSSH(serverId) {
+            if (!isDesktop || !window.electronAPI.connectSSH) return;
+            
+            try {
+                const result = await window.electronAPI.connectSSH(serverId);
+                if (result.success) {
+                    console.log('正在打开 SSH 终端');
+                }
+            } catch (e) {
+                console.error('SSH 连接失败:', e);
+                alert('SSH 连接失败: ' + e.message);
+            }
+        }
+        
         // 打开添加服务器模态框
         function openAddServerModal() {
             document.getElementById('serverModalTitle').textContent = '添加服务器';
@@ -1356,6 +1695,12 @@
             document.getElementById('serverGroup').value = '默认分组';
             document.getElementById('serverUsername').value = '';
             document.getElementById('serverPassword').value = '';
+            document.getElementById('sshEnabled').checked = false;
+            document.getElementById('sshHost').value = '';
+            document.getElementById('sshPort').value = '22';
+            document.getElementById('sshUsername').value = '';
+            document.getElementById('sshPassword').value = '';
+            document.getElementById('sshConfigSection').style.display = 'none';
             document.getElementById('serverModal').classList.add('active');
         }
         
@@ -1371,6 +1716,12 @@
             document.getElementById('serverGroup').value = server.group || '默认分组';
             document.getElementById('serverUsername').value = server.username || '';
             document.getElementById('serverPassword').value = server.password || '';
+            document.getElementById('sshEnabled').checked = server.sshEnabled || false;
+            document.getElementById('sshHost').value = server.sshHost || '';
+            document.getElementById('sshPort').value = server.sshPort || '22';
+            document.getElementById('sshUsername').value = server.sshUsername || '';
+            document.getElementById('sshPassword').value = server.sshPassword || '';
+            document.getElementById('sshConfigSection').style.display = server.sshEnabled ? 'block' : 'none';
             document.getElementById('serverModal').classList.add('active');
         }
         
@@ -1384,12 +1735,18 @@
             if (!isDesktop) return;
             
             const id = document.getElementById('serverId').value;
+            const sshEnabled = document.getElementById('sshEnabled').checked;
             const serverData = {
                 name: document.getElementById('serverName').value,
                 url: document.getElementById('serverUrl').value,
                 group: document.getElementById('serverGroup').value || '默认分组',
                 username: document.getElementById('serverUsername').value,
-                password: document.getElementById('serverPassword').value
+                password: document.getElementById('serverPassword').value,
+                sshEnabled: sshEnabled,
+                sshHost: sshEnabled ? document.getElementById('sshHost').value : '',
+                sshPort: sshEnabled ? document.getElementById('sshPort').value : '22',
+                sshUsername: sshEnabled ? document.getElementById('sshUsername').value : '',
+                sshPassword: sshEnabled ? document.getElementById('sshPassword').value : ''
             };
             
             // 自动添加 http:// 前缀
@@ -1732,6 +2089,11 @@
                 document.getElementById('alwaysOnTop').checked = config.alwaysOnTop || false;
                 document.getElementById('enableGlobalShortcut').checked = config.enableGlobalShortcut !== false;
                 document.getElementById('globalShortcut').value = config.globalShortcut || 'Ctrl+Shift+M';
+                document.getElementById('themeSelect').value = config.theme || 'dark';
+                document.getElementById('languageSelect').value = config.language || 'zh-CN';
+                
+                // 应用主题
+                applyTheme(config.theme || 'dark');
             } catch (e) {
                 console.error('加载配置失败:', e);
             }
@@ -1803,6 +2165,31 @@
             // 规则类型变化
             document.getElementById('ruleType')?.addEventListener('change', updateThresholdDisplay);
             
+            // 主题切换
+            document.getElementById('themeSelect')?.addEventListener('change', async (e) => {
+                if (!isDesktop || !window.electronAPI.setConfig) return;
+                
+                try {
+                    await window.electronAPI.setConfig({ theme: e.target.value });
+                    applyTheme(e.target.value);
+                } catch (err) {
+                    console.error('更新主题失败:', err);
+                }
+            });
+            
+            // 语言切换
+            document.getElementById('languageSelect')?.addEventListener('change', async (e) => {
+                if (!isDesktop || !window.electronAPI.setConfig) return;
+                
+                try {
+                    await window.electronAPI.setConfig({ language: e.target.value });
+                    // 语言切换需要刷新页面才能完全生效
+                    alert('语言设置已保存，重启应用后生效');
+                } catch (err) {
+                    console.error('更新语言失败:', err);
+                }
+            });
+            
             // 监听服务器更新
             if (window.electronAPI.onServersUpdate) {
                 window.electronAPI.onServersUpdate(() => {
@@ -1823,6 +2210,27 @@
             const div = document.createElement('div');
             div.textContent = text || '';
             return div.innerHTML;
+        }
+        
+        // 应用主题
+        function applyTheme(theme) {
+            const body = document.body;
+            
+            // 移除所有主题类
+            body.classList.remove('theme-dark', 'theme-light', 'theme-auto');
+            
+            // 添加当前主题类
+            body.classList.add('theme-' + theme);
+            
+            // 如果是 auto，检测系统主题
+            if (theme === 'auto') {
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                if (prefersDark) {
+                    body.classList.add('theme-dark');
+                } else {
+                    body.classList.add('theme-light');
+                }
+            }
         }
         
         function formatTime(isoString) {
