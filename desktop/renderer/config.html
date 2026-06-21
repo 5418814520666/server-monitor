@@ -232,6 +232,74 @@
             gap: 12px;
         }
         
+        /* 服务器分组 */
+        .server-group {
+            margin-bottom: 8px;
+        }
+        
+        .group-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+        
+        .group-header:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+        
+        .group-collapse-icon {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            width: 16px;
+            text-align: center;
+        }
+        
+        .group-name {
+            font-weight: 600;
+            font-size: 14px;
+            flex: 1;
+        }
+        
+        .group-count {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.08);
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+        
+        .group-status {
+            display: flex;
+            gap: 8px;
+            font-size: 12px;
+        }
+        
+        .group-status .status-online {
+            color: #10b981;
+        }
+        
+        .group-status .status-warning {
+            color: #f59e0b;
+        }
+        
+        .group-status .status-offline {
+            color: #ef4444;
+        }
+        
+        .group-servers {
+            margin-top: 8px;
+            display: grid;
+            gap: 8px;
+            padding-left: 20px;
+        }
+        
         .server-item {
             background: rgba(255, 255, 255, 0.04);
             border: 1px solid rgba(255, 255, 255, 0.08);
@@ -847,6 +915,25 @@
         
         body.theme-light .btn-secondary:hover {
             background: rgba(0, 0, 0, 0.08);
+        }
+        
+        /* 浅色主题 - 服务器分组 */
+        body.theme-light .group-header {
+            background: rgba(0, 0, 0, 0.02);
+            border-color: rgba(0, 0, 0, 0.06);
+        }
+        
+        body.theme-light .group-header:hover {
+            background: rgba(0, 0, 0, 0.04);
+        }
+        
+        body.theme-light .group-collapse-icon {
+            color: rgba(0, 0, 0, 0.4);
+        }
+        
+        body.theme-light .group-count {
+            color: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.06);
         }
         
         body.theme-light .server-item {
@@ -1559,6 +1646,8 @@
     <script>
         const isDesktop = window.electronAPI && window.electronAPI.isDesktop;
         let servers = [];
+        // 分组折叠状态
+        let groupCollapsed = {};
         let alarmRules = [];
         let alarmLogs = [];
         let currentPage = 'servers';
@@ -1675,39 +1764,80 @@
                 return;
             }
             
+            // 按分组组织服务器
+            const groups = {};
+            servers.forEach(server => {
+                const groupName = server.group || '默认分组';
+                if (!groups[groupName]) {
+                    groups[groupName] = [];
+                }
+                groups[groupName].push(server);
+            });
+            
             let html = '<div class="server-list">';
             
-            servers.forEach(server => {
-                const statusClass = 'status-' + (server.status || 'unknown');
-                const statusText = {
-                    'online': '在线',
-                    'offline': '离线',
-                    'warning': '告警',
-                    'unknown': '未知'
-                }[server.status || 'unknown'];
+            // 按分组渲染
+            Object.keys(groups).sort().forEach(groupName => {
+                const groupServers = groups[groupName];
+                const isCollapsed = groupCollapsed[groupName];
+                const collapseIcon = isCollapsed ? '▶' : '▼';
                 
-                const sshButton = server.sshEnabled 
-                    ? `<button class="btn btn-secondary btn-sm" onclick="connectSSH('${server.id}')" title="SSH 连接">🔑 SSH</button>`
-                    : '';
+                // 统计分组状态
+                const onlineCount = groupServers.filter(s => s.status === 'online').length;
+                const offlineCount = groupServers.filter(s => s.status === 'offline').length;
+                const warningCount = groupServers.filter(s => s.status === 'warning').length;
                 
                 html += `
-                    <div class="server-item" onclick="connectServer('${server.id}')">
-                        <div class="server-item-header">
-                            <div class="server-name">
-                                <span class="status-badge ${statusClass}"></span>
-                                ${escapeHtml(server.name)}
-                            </div>
-                            <div class="server-actions" onclick="event.stopPropagation()">
-                                ${sshButton}
-                                <button class="btn btn-secondary btn-sm" onclick="editServer('${server.id}')">编辑</button>
-                                <button class="btn btn-danger btn-sm" onclick="deleteServer('${server.id}')">删除</button>
+                    <div class="server-group">
+                        <div class="group-header" onclick="toggleGroup('${escapeHtml(groupName)}')">
+                            <span class="group-collapse-icon">${collapseIcon}</span>
+                            <span class="group-name">${escapeHtml(groupName)}</span>
+                            <span class="group-count">${groupServers.length} 台</span>
+                            <div class="group-status">
+                                ${onlineCount > 0 ? `<span class="status-online">● ${onlineCount}</span>` : ''}
+                                ${warningCount > 0 ? `<span class="status-warning">● ${warningCount}</span>` : ''}
+                                ${offlineCount > 0 ? `<span class="status-offline">● ${offlineCount}</span>` : ''}
                             </div>
                         </div>
-                        <div class="server-url">${escapeHtml(server.url)}</div>
-                        <div class="server-meta">
-                            <span class="server-group">${escapeHtml(server.group || '默认分组')}</span>
-                            <span>状态: ${statusText}</span>
-                            ${server.lastCheck ? `<span>检测时间: ${formatTime(server.lastCheck)}</span>` : ''}
+                        <div class="group-servers" style="display: ${isCollapsed ? 'none' : 'block'}">
+                `;
+                
+                groupServers.forEach(server => {
+                    const statusClass = 'status-' + (server.status || 'unknown');
+                    const statusText = {
+                        'online': '在线',
+                        'offline': '离线',
+                        'warning': '告警',
+                        'unknown': '未知'
+                    }[server.status || 'unknown'];
+                    
+                    const sshButton = server.sshEnabled 
+                        ? `<button class="btn btn-secondary btn-sm" onclick="connectSSH('${server.id}')" title="SSH 连接">🔑 SSH</button>`
+                        : '';
+                    
+                    html += `
+                        <div class="server-item" onclick="connectServer('${server.id}')">
+                            <div class="server-item-header">
+                                <div class="server-name">
+                                    <span class="status-badge ${statusClass}"></span>
+                                    ${escapeHtml(server.name)}
+                                </div>
+                                <div class="server-actions" onclick="event.stopPropagation()">
+                                    ${sshButton}
+                                    <button class="btn btn-secondary btn-sm" onclick="editServer('${server.id}')">编辑</button>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteServer('${server.id}')">删除</button>
+                                </div>
+                            </div>
+                            <div class="server-url">${escapeHtml(server.url)}</div>
+                            <div class="server-meta">
+                                <span>状态: ${statusText}</span>
+                                ${server.lastCheck ? `<span>检测时间: ${formatTime(server.lastCheck)}</span>` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += `
                         </div>
                     </div>
                 `;
@@ -1715,6 +1845,12 @@
             
             html += '</div>';
             container.innerHTML = html;
+        }
+        
+        // 切换分组折叠状态
+        function toggleGroup(groupName) {
+            groupCollapsed[groupName] = !groupCollapsed[groupName];
+            renderServerList();
         }
         
         // 更新服务器下拉选择
