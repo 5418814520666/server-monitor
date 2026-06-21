@@ -88,6 +88,29 @@ function checkAuth() {
         return false;
     }
     
+    // 检查是否是默认密码
+    fetch('/api/auth/check', {
+        headers: {
+            'X-Session-Id': sessionId
+        }
+    })
+    .then(res => {
+        if (!res.ok) {
+            redirectToLogin();
+            return;
+        }
+        return res.json();
+    })
+    .then(data => {
+        if (data && data.isDefault) {
+            // 是默认密码，跳转到修改密码页面
+            window.location.href = '/change-password.html?sessionId=' + encodeURIComponent(sessionId) + '&force=true';
+        }
+    })
+    .catch(() => {
+        // 忽略错误，继续
+    });
+    
     return true;
 }
 
@@ -502,10 +525,36 @@ function initUserInfo() {
         document.getElementById('username').textContent = username;
     }
     
+    const sessionId = getSessionId();
+    
+    // 更新修改密码链接
+    const changePasswordLink = document.getElementById('changePasswordLink');
+    if (changePasswordLink && sessionId) {
+        changePasswordLink.href = 'change-password.html?sessionId=' + encodeURIComponent(sessionId);
+    }
+    
     // 绑定登出按钮
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', logout);
+    }
+    
+    // 下拉菜单交互
+    const userDropdown = document.querySelector('.user-dropdown');
+    const userDropdownBtn = document.getElementById('userDropdownBtn');
+    
+    if (userDropdownBtn && userDropdown) {
+        userDropdownBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            userDropdown.classList.toggle('open');
+        });
+        
+        // 点击外部关闭下拉菜单
+        document.addEventListener('click', (e) => {
+            if (!userDropdown.contains(e.target)) {
+                userDropdown.classList.remove('open');
+            }
+        });
     }
 }
 

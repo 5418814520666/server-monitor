@@ -2,6 +2,59 @@
  * SSH 终端前端逻辑
  */
 
+const SESSION_KEY = 'server_monitor_session';
+
+// 获取会话ID
+function getSessionId() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlSessionId = urlParams.get('sessionId');
+    if (urlSessionId) {
+        return urlSessionId;
+    }
+    
+    try {
+        const session = localStorage.getItem(SESSION_KEY);
+        if (session) return JSON.parse(session).sessionId;
+    } catch (e) {}
+    
+    try {
+        const session = sessionStorage.getItem(SESSION_KEY);
+        if (session) return JSON.parse(session).sessionId;
+    } catch (e) {}
+    
+    return null;
+}
+
+// 跳转到登录页
+function redirectToLogin() {
+    window.location.href = '/login.html';
+}
+
+// 检查登录状态
+function checkAuth() {
+    const sessionId = getSessionId();
+    if (!sessionId) {
+        redirectToLogin();
+        return false;
+    }
+    
+    fetch('/api/auth/check', {
+        headers: { 'X-Session-Id': sessionId }
+    })
+    .then(res => {
+        if (!res.ok) { redirectToLogin(); return; }
+        return res.json();
+    })
+    .then(data => {
+        if (data && data.isDefault) {
+            window.location.href = '/change-password.html?sessionId=' + encodeURIComponent(sessionId) + '&force=true';
+        }
+    })
+    .catch(() => {});
+    
+    return true;
+}
+
 // 全局变量
 let term = null;
 let fitAddon = null;
@@ -28,6 +81,11 @@ const clearBtn = document.getElementById('clearBtn');
 
 // 初始化
 document.addEventListener('DOMContentLoaded', () => {
+    // 检查认证
+    if (!checkAuth()) {
+        return;
+    }
+    
     initTerminal();
     loadQuickConnect();
     bindEvents();
