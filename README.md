@@ -35,7 +35,8 @@
 
 ### 桌面客户端
 - Electron 28 (跨平台桌面应用框架)
-- electron-builder (打包工具)
+- electron-builder (打包构建工具)
+- electron-updater (自动更新)
 - 深色玻璃拟态 UI 设计
 
 ## 📦 安装与使用
@@ -112,20 +113,15 @@ server-monitor/
 │       ├── ssh.js       # SSH 终端逻辑
 │       ├── login.js     # 登录页面逻辑
 │       └── music.js     # 音乐播放器逻辑
-├── desktop-client/      # Windows 桌面客户端
+├── electron/              # Windows 桌面客户端
 │   ├── main.js          # Electron 主进程
 │   ├── preload.js       # 预加载脚本
+│   ├── error.html       # 连接错误页面
 │   ├── package.json     # 桌面客户端配置
 │   ├── README.md        # 桌面客户端说明文档
-│   ├── assets/          # 资源文件
-│   │   └── icon.svg     # 应用图标
-│   └── renderer/        # 渲染进程
-│       ├── index.html   # 主页面
-│       ├── about.html   # 关于页面
-│       ├── css/
-│       │   └── style.css
-│       └── js/
-│           └── app.js
+│   ├── UPDATE.md        # 自动更新配置说明
+│   └── assets/          # 资源文件
+│       └── README.md    # 图标资源说明
 ├── data/                # 数据存储目录（运行时自动创建）
 │   ├── history.json     # 历史数据文件
 │   ├── users.json       # 用户数据文件
@@ -313,22 +309,23 @@ sudo systemctl reload nginx
 
 ## 💻 桌面客户端
 
-项目提供了基于 Electron 开发的 Windows 桌面客户端，支持系统托盘运行和多服务器管理。
+项目提供了基于 Electron 开发的 Windows 桌面客户端，支持自动更新和系统托盘运行。
 
 ### 功能特性
 
-- 🖥️ **多服务器管理**：支持添加、编辑、删除多个服务器
-- 📊 **实时监控**：内嵌完整的 Web 监控面板
-- 🔔 **系统托盘**：最小化到托盘，后台运行
-- ⚡ **自动连接**：启动时自动连接指定服务器
-- 🎨 **深色主题**：与 Web 版一致的玻璃拟态设计
-- 🔄 **状态检测**：自动检测服务器在线状态
+- 🖥️ **桌面客户端**：独立的 Windows 桌面应用，无需打开浏览器
+- 🔄 **自动更新**：支持自动检测和安装更新
+- 🔔 **系统托盘**：最小化到系统托盘，后台运行
+- ⚡ **快速启动**：一键启动，快速访问服务器监控
+- 🎨 **原生体验**：支持窗口缩放、全屏、快捷键等原生功能
+- 🔐 **配置持久化**：服务器地址等配置自动保存
+- 📱 **单实例运行**：防止同时运行多个实例
 
 ### 快速开始
 
 ```bash
 # 进入桌面客户端目录
-cd desktop-client
+cd electron
 
 # 安装依赖
 npm install
@@ -345,7 +342,7 @@ npm run build:win
 - **NSIS 安装包**：标准 Windows 安装程序，支持自定义安装目录
 - **Portable 便携版**：单文件 exe，无需安装，可直接运行
 
-详细说明请参考 [desktop-client/README.md](desktop-client/README.md)。
+详细说明请参考 [electron/README.md](electron/README.md)，自动更新配置请参考 [electron/UPDATE.md](electron/UPDATE.md)。
 
 ## 📁 部署文件说明
 
