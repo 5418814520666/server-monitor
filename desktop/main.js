@@ -20,6 +20,7 @@ const isDev = process.argv.includes('--dev') || process.env.NODE_ENV === 'develo
 let mainWindow = null;
 let tray = null;
 let miniWindow = null; // 迷你悬浮窗
+let miniWindowDataInterval = null; // 悬浮窗数据更新定时器
 
 // 服务器状态
 let serverStatus = 'unknown'; // unknown, online, warning, offline
@@ -2198,6 +2199,7 @@ function hideMiniWindow() {
   if (miniWindow) {
     miniWindow.hide();
   }
+  stopMiniWindowDataUpdate();
 }
 
 // 切换迷你悬浮窗显示
@@ -2213,6 +2215,110 @@ function toggleMiniWindow() {
 function updateMiniWindowData(data) {
   if (miniWindow && !miniWindow.isDestroyed()) {
     miniWindow.webContents.send('update-data', data);
+  }
+}
+
+// 获取服务器监控数据并更新悬浮窗
+async function fetchAndUpdateMiniWindowData() {
+  if (!miniWindow || !miniWindow.isVisible()) return;
+  
+  const serverId = currentServerId;
+  if (!serverId) {
+    updateMiniWindowData({
+      serverName: '请选择服务器',
+      status: 'unknown',
+      cpu: 0,
+      memory: 0,
+      disk: 0,
+      network: 0
+    });
+    return;
+  }
+  
+  try {
+    const servers = getServers();
+    const server = servers.find(s => s.id === serverId);
+    if (!server) return;
+    
+    // 尝试获取服务器信息
+    try {
+      const infoUrl = server.url.replace(/\/+$/, '') + '/api/info';
+      const headers = {};
+      if (server.username) {
+        headers['Authorization'] = 'Basic ' + Buffer.from(`${server.username}:${server.password}`).toString('base64');
+      }
+      
+      const response = await fetch(infoUrl, {
+        signal: AbortSignal.timeout(3000),
+        headers
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        // 计算磁盘使用率（取第一个分区）
+        let diskUsage = 0;
+        if (data.disk && data.disk.length > 0) {
+          diskUsage = data.disk[0].usage || 0;
+        }
+        
+        // 计算网络速度（取总和）
+        let networkSpeed = 0;
+        if (data.network) {
+          networkSpeed = (data.network.rx_sec || 0) + (data.network.tx_sec || 0);
+          // 转换为 KB/s
+          networkSpeed = networkSpeed / 1024;
+        }
+        
+        updateMiniWindowData({
+          serverName: server.name,
+          status: 'online',
+          cpu: data.cpu?.usage || 0,
+          memory: data.memory?.usage || 0,
+          disk: diskUsage,
+          network: networkSpeed
+        });
+        return;
+      }
+    } catch (e) {
+      // 获取失败，继续往下走
+    }
+    
+    // 如果获取失败，显示离线状态
+    updateMiniWindowData({
+      serverName: server.name,
+      status: 'offline',
+      cpu: 0,
+      memory: 0,
+      disk: 0,
+      network: 0
+    });
+    
+  } catch (e) {
+    console.error('更新悬浮窗数据失败:', e);
+  }
+}
+
+// 启动悬浮窗数据更新
+function startMiniWindowDataUpdate() {
+  if (miniWindowDataInterval) {
+    clearInterval(miniWindowDataInterval);
+  }
+  
+  // 立即更新一次
+  fetchAndUpdateMiniWindowData();
+  
+  // 每3秒更新一次
+  miniWindowDataInterval = setInterval(() => {
+    fetchAndUpdateMiniWindowData();
+  }, 3000);
+}
+
+// 停止悬浮窗数据更新
+function stopMiniWindowDataUpdate() {
+  if (miniWindowDataInterval) {
+    clearInterval(miniWindowDataInterval);
+    miniWindowDataInterval = null;
   }
 }
 
