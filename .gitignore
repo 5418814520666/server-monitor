@@ -63,20 +63,6 @@ Thumbs.db
 *.temp
 .cache/
 
-# Electron
-electron/dist/
-electron/release/
-electron/out/
-electron/*.exe
-electron/*.msi
-electron/*.dmg
-electron/*.deb
-electron/*.rpm
-electron/*.AppImage
-electron/*.blockmap
-electron/latest*.yml
-electron/latest*.json
-
 # Desktop client
 desktop/dist/
 desktop/release/
@@ -92,6 +78,3 @@ desktop/latest*.yml
 desktop/latest*.json
 desktop/node_modules/
 
-# Electron icons (可选，如果不想提交图标)
-# electron/assets/icon.ico
-# electron/assets/icon.png

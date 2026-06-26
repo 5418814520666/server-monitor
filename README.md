@@ -113,15 +113,20 @@ server-monitor/
 │       ├── ssh.js       # SSH 终端逻辑
 │       ├── login.js     # 登录页面逻辑
 │       └── music.js     # 音乐播放器逻辑
-├── electron/              # Windows 桌面客户端
-│   ├── main.js          # Electron 主进程
-│   ├── preload.js       # 预加载脚本
-│   ├── error.html       # 连接错误页面
+├── desktop/               # 跨平台桌面客户端（Windows + Linux）
+│   ├── main.js          # Electron 主进程（完整功能实现）
+│   ├── preload.js       # 预加载脚本（API 接口）
 │   ├── package.json     # 桌面客户端配置
 │   ├── README.md        # 桌面客户端说明文档
-│   ├── UPDATE.md        # 自动更新配置说明
-│   └── assets/          # 资源文件
-│       └── README.md    # 图标资源说明
+│   ├── build/           # 构建资源（图标）
+│   │   ├── icon.svg     # SVG 图标源文件
+│   │   ├── icon.png     # PNG 图标（512x512）
+│   │   └── icon.ico     # ICO 图标（多尺寸）
+│   └── renderer/        # 渲染进程页面
+│       ├── config.html  # 服务器管理配置页面
+│       ├── mini.html    # 迷你悬浮窗页面
+│       ├── servers.html # 服务器列表页面
+│       └── alarms.html  # 告警管理页面
 ├── data/                # 数据存储目录（运行时自动创建）
 │   ├── history.json     # 历史数据文件
 │   ├── users.json       # 用户数据文件
@@ -342,7 +347,7 @@ npm run build:win
 - **NSIS 安装包**：标准 Windows 安装程序，支持自定义安装目录
 - **Portable 便携版**：单文件 exe，无需安装，可直接运行
 
-详细说明请参考 [electron/README.md](electron/README.md)，自动更新配置请参考 [electron/UPDATE.md](electron/UPDATE.md)。
+详细说明请参考 [desktop/README.md](desktop/README.md)。
 
 ## 📁 部署文件说明
 
