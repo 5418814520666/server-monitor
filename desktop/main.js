@@ -208,6 +208,8 @@ function updateServer(id, updates) {
   // 如果更新了密码，需要加密
   if (updates.password !== undefined) {
     updates.password = encrypt(updates.password);
+    // 密码变更，清除 Session
+    clearServerSession(id);
   }
   if (updates.sshPassword !== undefined) {
     updates.sshPassword = encrypt(updates.sshPassword);
@@ -227,6 +229,8 @@ function deleteServer(id) {
   const servers = readServers();
   const filtered = servers.filter(s => s.id !== id);
   saveServers(filtered);
+  // 清除对应的 Session
+  clearServerSession(id);
   return filtered.length < servers.length;
 }
 
@@ -277,6 +281,73 @@ async function checkAllServersStatus() {
 
 // 当前选中的服务器ID
 let currentServerId = null;
+
+// 服务器 Session 缓存
+const serverSessions = {}; // { serverId: { sessionId, expiresAt } }
+
+// 服务器登录，获取 Session ID
+async function loginServer(serverId) {
+  const servers = getServers();
+  const server = servers.find(s => s.id === serverId);
+  if (!server) {
+    return { success: false, error: '服务器不存在' };
+  }
+  
+  // 如果没有用户名密码，不需要登录
+  if (!server.username || !server.password) {
+    return { success: true, sessionId: null, noAuth: true };
+  }
+  
+  try {
+    const loginUrl = server.url.replace(/\/+$/, '') + '/api/login';
+    const response = await fetch(loginUrl, {
+      method: 'POST',
+      signal: AbortSignal.timeout(5000),
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        username: server.username,
+        password: server.password
+      })
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      if (data.success && data.sessionId) {
+        // 保存 Session ID，有效期 23 小时（提前 1 小时过期）
+        serverSessions[serverId] = {
+          sessionId: data.sessionId,
+          expiresAt: Date.now() + 23 * 60 * 60 * 1000
+        };
+        return { success: true, sessionId: data.sessionId };
+      }
+    }
+    
+    const errorData = await response.json().catch(() => ({}));
+    return { success: false, error: errorData.error || '登录失败' };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+}
+
+// 获取有效的 Session ID（如果过期或不存在则重新登录）
+async function getServerSession(serverId) {
+  const session = serverSessions[serverId];
+  
+  // 如果 Session 存在且未过期，直接返回
+  if (session && session.expiresAt > Date.now()) {
+    return { success: true, sessionId: session.sessionId };
+  }
+  
+  // 否则重新登录
+  return await loginServer(serverId);
+}
+
+// 清除服务器 Session
+function clearServerSession(serverId) {
+  delete serverSessions[serverId];
+}
 
 // ==================== 多服务器管理结束 ====================
 
@@ -496,12 +567,18 @@ async function checkServerAlarms(server) {
     
     // 服务器在线，尝试获取详细信息
     try {
-      const infoUrl = `${server.url}/api/info`;
+      const infoUrl = server.url.replace(/\/+$/, '') + '/api/info';
+      
+      // 获取 Session ID
+      const sessionResult = await getServerSession(server.id);
+      const headers = {};
+      if (sessionResult.success && sessionResult.sessionId) {
+        headers['X-Session-Id'] = sessionResult.sessionId;
+      }
+      
       const infoResponse = await fetch(infoUrl, {
         signal: AbortSignal.timeout(5000),
-        headers: server.username ? {
-          'Authorization': 'Basic ' + Buffer.from(`${server.username}:${server.password}`).toString('base64')
-        } : {}
+        headers
       });
       
       if (infoResponse.ok) {
