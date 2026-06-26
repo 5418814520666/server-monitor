@@ -156,8 +156,19 @@ function generateId() {
 }
 
 // 获取所有服务器
+// 解密服务器密码
+function decryptServerPasswords(server) {
+  if (!server) return server;
+  return {
+    ...server,
+    password: decrypt(server.password || ''),
+    sshPassword: decrypt(server.sshPassword || '')
+  };
+}
+
 function getServers() {
-  return readServers();
+  const servers = readServers();
+  return servers.map(s => decryptServerPasswords(s));
 }
 
 // 添加服务器
@@ -169,13 +180,13 @@ function addServer(server) {
     url: server.url,
     group: server.group || '默认分组',
     username: server.username || '',
-    password: server.password || '', // 注意：生产环境应该加密存储
+    password: encrypt(server.password || ''), // 加密存储
     // SSH 配置
     sshEnabled: server.sshEnabled || false,
     sshHost: server.sshHost || '',
     sshPort: server.sshPort || 22,
     sshUsername: server.sshUsername || '',
-    sshPassword: server.sshPassword || '',
+    sshPassword: encrypt(server.sshPassword || ''), // 加密存储
     sshKey: server.sshKey || '', // SSH 私钥路径
     status: 'unknown',
     lastCheck: null,
@@ -184,7 +195,7 @@ function addServer(server) {
   };
   servers.push(newServer);
   saveServers(servers);
-  return newServer;
+  return decryptServerPasswords(newServer);
 }
 
 // 更新服务器
@@ -193,13 +204,21 @@ function updateServer(id, updates) {
   const index = servers.findIndex(s => s.id === id);
   if (index === -1) return null;
   
+  // 如果更新了密码，需要加密
+  if (updates.password !== undefined) {
+    updates.password = encrypt(updates.password);
+  }
+  if (updates.sshPassword !== undefined) {
+    updates.sshPassword = encrypt(updates.sshPassword);
+  }
+  
   servers[index] = {
     ...servers[index],
     ...updates,
     updatedAt: new Date().toISOString()
   };
   saveServers(servers);
-  return servers[index];
+  return decryptServerPasswords(servers[index]);
 }
 
 // 删除服务器
@@ -220,8 +239,9 @@ function getServerGroups() {
 // 检测服务器状态
 async function checkServerStatus(serverId) {
   const servers = readServers();
-  const server = servers.find(s => s.id === serverId);
+  let server = servers.find(s => s.id === serverId);
   if (!server) return 'unknown';
+  server = decryptServerPasswords(server); // 解密密码
   
   try {
     const url = server.url.replace(/\/+$/, '') + '/api/health';
@@ -248,7 +268,7 @@ async function checkServerStatus(serverId) {
 
 // 检测所有服务器状态
 async function checkAllServersStatus() {
-  const servers = readServers();
+  const servers = readServers().map(s => decryptServerPasswords(s));
   const promises = servers.map(s => checkServerStatus(s.id));
   await Promise.allSettled(promises);
   return readServers();
@@ -648,6 +668,7 @@ function checkOfflineAlarm(serverId, serverName, cache) {
 
 // 检测所有服务器告警
 async function checkAllServersAlarms() {
+  const servers = getServers();
   for (const server of servers) {
     await checkServerAlarms(server);
   }
